@@ -38,3 +38,12 @@ void load_fen(Board &board, const std::string &fen)
 
 // implement export_fen
 
+
+// TEST
+
+// int main()
+// {
+//     Board board{};
+//     load_fen(board, START_FEN);
+//     return 0;
+// }
