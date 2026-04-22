@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 #include <cstdint>
-#include "src\include\utils.h"
-#include "src\include\board.hpp"
+#include "utils.h"
+#include "board.hpp"
 
 // ---------------------------------
 // Move flags
@@ -48,14 +48,14 @@ struct Move
 // ---------------------------------
 
 // create a basic move
-inline Move make_move(int from, int to, Piece piece)
+inline Move make_move(int from, int to, Piece piece, Piece captured)
 {
     return Move{
         from,
         to,
         piece,
-        Empty,
-        QUIET,
+        captured,
+        (captured == Empty ? QUIET : CAPTURE),
         Empty
     };
 }

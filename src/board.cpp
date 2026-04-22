@@ -74,6 +74,11 @@ bool is_empty_p(Piece piece)
     return piece == Empty;
 }
 
+bool is_opponent(Piece my_piece, Piece test_piece)
+{
+    return is_white(my_piece) == is_black(test_piece);
+}
+
 // put a piece on a square
 // updates board.squares[] and sets bit in piece's 64-bitboard
 void place_piece(Board &board, int square, Piece piece)

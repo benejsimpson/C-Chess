@@ -20,15 +20,25 @@ static void generate_king_moves(const Board &board, vector<Move> &moves, int squ
 
 static bool is_legal_position_after_move(const Board &board, const Move &move);
 
-// You will write this later
-// It should return true if the side to move is currently in check
-bool is_in_check(const Board &board);
+const int KNIGHT_MOVES[8][2] = {
+    {1,2}, {1,-2}, {-1,2}, {-1,-2},
+    {2,1}, {2,-1}, {-2,1}, {-2,-1} 
+};
 
-// --------------------------------------------------
-// Generate all pseudo-legal moves
-// Pseudo-legal = follows piece movement rules,
-// but may still leave your king in check
-// --------------------------------------------------
+const int KING_MOVES[8][2] = {
+    {0, 1}, {1, 0}, {0, -1}, {-1, 0},
+    {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+};
+
+const int DIAGONAL_MOVES[4][2] = {
+    {1,1}, {1,-1}, {-1,1}, {-1,-1}
+};
+
+// TO DO: return true if the side to move is currently in check
+bool is_in_check(const Board &board);
+bool is_square_attacked(const Board &board, int square, bool by_white);
+// finds king square for white[true] or black [false]
+int find_king_square(const Board &board, bool white_king);
 
 vector<Move> generate_pseudo_legal_moves(const Board &board)
 {
@@ -39,22 +49,16 @@ vector<Move> generate_pseudo_legal_moves(const Board &board)
         Piece piece = board.squares[square];
 
         if (piece == Empty)
-        {
             continue;
-        }
 
         // Skip enemy pieces
         if (board.white_to_move && is_black(piece))
-        {
             continue;
-        }
 
         if (!board.white_to_move && is_white(piece))
-        {
             continue;
-        }
 
-        switch (piece_type(piece))
+        switch (get_piece_type(piece))
         {
         case PAWN:
             generate_pawn_moves(board, moves, square);
@@ -90,8 +94,6 @@ vector<Move> generate_pseudo_legal_moves(const Board &board)
 
 // --------------------------------------------------
 // Generate all fully legal moves
-// Legal = pseudo-legal move that does not leave
-// your own king in check
 // --------------------------------------------------
 
 vector<Move> generate_legal_moves(const Board &board)
@@ -116,11 +118,11 @@ vector<Move> generate_legal_moves(const Board &board)
 
 static bool is_legal_position_after_move(const Board &board, const Move &move)
 {
-    Board copy = board;
+    //Board copy = board;
 
-    make_move(copy, move);
+    //make_move(copy, move);
 
-    // After make_move(), side to move should switch.
+    // After make_move(), side to move changes.
     // So we need a way to check whether the player who
     // just moved has left their own king in check.
     //
@@ -131,13 +133,18 @@ static bool is_legal_position_after_move(const Board &board, const Move &move)
     // depending on how you write is_in_check().
     //
     // For now, keep the structure simple:
-    return !is_in_check(copy);
+
+    //return !is_in_check(copy);
 }
 
 // --------------------------------------------------
 // Piece move generators
-// Start with empty skeletons and fill them one by one
 // --------------------------------------------------
+/*
+    TO DO:
+    pawn - en passant, promotion
+    king/rook - castling
+*/
 
 static void generate_pawn_moves(const Board &board, vector<Move> &moves, int square)
 // TO DO:
@@ -150,17 +157,18 @@ static void generate_pawn_moves(const Board &board, vector<Move> &moves, int squ
     int direction = white ? +8 : -8;
     int target = square + direction;
     int pawnrank = white ? 1 : 6;
+    int pawnfile = index_to_file(square);
 
     // moving forward 1 or 2 squares if on pawn rank
     Piece target_p = board.squares[target];
     if (is_empty_p(target_p))
     {
-        moves.push_back(make_move(square, target, pawn));
+        moves.push_back(make_move(square, target, pawn, Empty));
 
         target_p = board.squares[square + (2 * direction)];
         if (index_to_rank(square) == pawnrank && is_empty_p(target_p))
         {
-            moves.push_back(make_move(square, square + (2 * direction), pawn));
+            moves.push_back(make_move(square, square + (2 * direction), pawn, Empty));
         }
     }
 
@@ -168,101 +176,416 @@ static void generate_pawn_moves(const Board &board, vector<Move> &moves, int squ
     int leftright[2] = {-1, 1};
     for (int lr : leftright)
     {
+        if (pawnfile + lr < 0 || pawnfile + lr > 7) // prevent capturing on opposite file of board
+            continue;
+
         target_p = board.squares[target + lr];
-        if (!is_empty_p(target_p) && index_to_rank(target + lr) == index_to_rank(target))
+        if (!is_empty_p(target_p) && is_opponent(pawn,target_p))
         {
-            moves.push_back(make_move(square, target + lr, pawn));
+            moves.push_back(make_move(square, target + lr, pawn, target_p));
         }
     }
 }
 
-        static void generate_knight_moves(const Board &board, vector<Move> &moves, int square)
-        {
-            // TODO:
-            // test all 8 knight jump squares
-            // if target is on board:
-            //   - empty -> quiet move
-            //   - enemy -> capture move
-        }
+static void generate_knight_moves(const Board &board, vector<Move> &moves, int square)
+{
+    int start_file = index_to_file(square);
+    int start_rank = index_to_rank(square);
+    Piece knight = board.squares[square];
 
-        static void generate_bishop_moves(const Board &board, vector<Move> &moves, int square)
-        {
-            // TODO:
-            // slide diagonally in 4 directions until:
-            // - edge of board
-            // - friendly piece blocks
-            // - enemy piece can be captured, then stop
-        }
+    for (int i = 0; i < 8; i++)
+    {
+        int tar_file = start_file + KNIGHT_MOVES[i][0];
+        int tar_rank = start_rank + KNIGHT_MOVES[i][1];
 
-        static void generate_rook_moves(const Board &board, vector<Move> &moves, int square)
-        {
-            // TODO:
-            // slide horizontally/vertically in 4 directions
-        }
+        if (tar_rank < 0 || tar_rank > 7)
+            continue;
+        if (tar_file < 0 || tar_file > 7)
+            continue;
 
-        static void generate_queen_moves(const Board &board, vector<Move> &moves, int square)
-        {
-            // Queen = bishop + rook movement
-            generate_bishop_moves(board, moves, square);
-            generate_rook_moves(board, moves, square);
-        }
+        int tar_sq = file_rank_to_index(tar_file, tar_rank);
+        Piece target = board.squares[tar_sq];
 
-        static void generate_king_moves(const Board &board, vector<Move> &moves, int square)
-        {
-            // TODO:
-            // 1. normal king moves to 8 surrounding squares
-            // 2. castling
-        }
+        if (is_empty_p(target))
+            moves.push_back(make_move(square, tar_sq, knight, Empty));
+        else if (is_opponent(knight,target))
+            moves.push_back(make_move(square, tar_sq, knight, target));
+    }
+}
 
-        const vector<int> horizontal_moves(int square)
-        {
-            vector<int> moves = {};
-            int lower = (8 * (square / 8));
-            int upper = (8 * (square / 8)) + 7;
+static void generate_bishop_moves(const Board &board, vector<Move> &moves, int square)
+{
+    Piece bishop = board.squares[square];
+    int tar_sq;
 
-            for (int s = lower; s <= upper; s++)
+    for (int i = 0; i < 4;i++) // loop through each diagonal direction from start square
+    {
+        int curr_file = index_to_file(square);
+        int curr_rank = index_to_rank(square);
+
+        while (true)
+        {
+            int tar_file = curr_file + DIAGONAL_MOVES[i][0];
+            int tar_rank = curr_rank + DIAGONAL_MOVES[i][1];
+            
+            // stop if off board
+            if (tar_file < 0 || tar_file > 7)
+                break;
+            if (tar_rank < 0 || tar_rank > 7)
+                break;
+
+            // target square and piece on that square
+            tar_sq = file_rank_to_index(tar_file, tar_rank);
+            Piece target = board.squares[tar_sq];
+
+            if (is_empty_p(target))
             {
-                if (s == square)
-                    continue;
-                moves.push_back(s);
-            }
-            return moves;
-        }
-
-        const vector<int> verticle_pos_moves(int square)
-        {
-            vector<int> moves = {};
-            int file = square % 8;
-            int s;
-
-            for (int rank = 0; rank < 8; rank++)
-            {
-                s = (8 * rank) + file;
-                if (s == square)
-                    continue;
-                moves.push_back(s);
-            }
-            return moves;
-        }
-
-        const vector<int> diagonal_moves(int square)
-        {
-            vector<int> moves = {};
-            int s = square + 9;
-            while (s < 63)
-            {
-                moves.push_back(s);
-                s += 9;
+                moves.push_back(make_move(square, tar_sq, bishop, Empty));
             }
 
-            s = square - 7;
-
-            for (int rank = 0; rank < 8; rank++)
+            else if (is_opponent(bishop,target))
             {
-                int s = (8 * rank) + file;
-                if (s == square)
-                    continue;
-                moves.push_back(s);
+                moves.push_back(make_move(square, tar_sq, bishop, target));
+                break;
             }
-            return moves;
+            
+            // own piece blocks moves
+            else
+                break;
+
+            curr_file = tar_file;
+            curr_rank = tar_rank;
+
         }
+    }
+}
+
+static void generate_rook_moves(const Board &board, vector<Move> &moves, int square)
+{
+    Piece rook = board.squares[square];
+    int directions[2] = {1, -1};
+    int start_file = index_to_file(square);
+    int start_rank = index_to_rank(square);
+
+    // moves along a rank
+    for (int dir : directions)
+    {
+        int curr_file = start_file;
+
+        while (true)
+        {
+            int tar_file = curr_file + dir;
+            
+            // stop if off board
+            if (tar_file < 0 || tar_file > 7)
+                break;
+        
+            // target square and piece on that square
+            int tar_sq = file_rank_to_index(tar_file, start_rank);
+            Piece target = board.squares[tar_sq];
+
+            if (is_empty_p(target))
+            {
+                moves.push_back(make_move(square, tar_sq, rook, Empty));
+            }
+
+            else if (is_opponent(rook,target))
+            {
+                moves.push_back(make_move(square, tar_sq, rook, target));
+                break;
+            }
+            
+            // own piece blocks moves
+            else
+                break;
+
+            curr_file = tar_file;
+        }
+
+    }
+
+    // moves up and down a file
+    for (int dir : directions)
+    {
+        int curr_rank = start_rank;
+
+        while (true)
+        {
+            int tar_rank = curr_rank + dir;
+            
+            // stop if off board
+            if (tar_rank < 0 || tar_rank > 7)
+                break;
+        
+            // target square and piece on that square
+            int tar_sq = file_rank_to_index(start_file, tar_rank);
+            Piece target = board.squares[tar_sq];
+
+            if (is_empty_p(target))
+            {
+                moves.push_back(make_move(square, tar_sq, rook, Empty));
+            }
+
+            else if (is_opponent(rook,target))
+            {
+                moves.push_back(make_move(square, tar_sq, rook, target));
+                break;
+            }
+            
+            // own piece blocks moves
+            else
+                break;
+
+            curr_rank = tar_rank;
+        }
+
+    }
+}
+
+static void generate_queen_moves(const Board &board, vector<Move> &moves, int square)
+{
+    // Queen = bishop + rook movement
+    generate_bishop_moves(board, moves, square);
+    generate_rook_moves(board, moves, square);
+}
+
+static void generate_king_moves(const Board &board, vector<Move> &moves, int square)
+{
+    int start_file = index_to_file(square);
+    int start_rank = index_to_rank(square);
+    
+    Piece king = board.squares[square];
+
+    for (int i = 0; i < 8; i++)
+    {
+        int tar_file = start_file + KING_MOVES[i][0];
+        int tar_rank = start_rank + KING_MOVES[i][1];
+
+        if (tar_file < 0 || tar_file > 7)
+            continue;
+        if (tar_rank < 0 || tar_rank > 7)
+            continue;
+
+        int tar_sq = file_rank_to_index(tar_file, tar_rank);
+        Piece tar_p = board.squares[tar_sq];
+        
+        if (is_empty_p(tar_p))
+        {
+            moves.push_back(make_move(square, tar_sq, king, Empty));
+        }
+
+        else if (is_opponent(king,tar_p))
+        {
+            moves.push_back(make_move(square, tar_sq, king, tar_p));
+        }
+    }
+
+    // TO DO: castling
+}
+
+int find_king_square(const Board &board, bool white_king)
+{
+    BitBoard bb = white_king ? board.bitboards[WK] : board.bitboards[BK];
+    return __builtin_ctzll(bb.bits);
+}
+
+bool is_in_check(const Board& board, bool white_king)
+{
+    int king_square = find_king_square(board, white_king);
+
+    if (white_king)
+        return is_square_attacked(board, king_square, false);
+    else
+        return is_square_attacked(board, king_square, true);
+}
+
+// true if square is attacked by piece of opposite colour
+bool is_square_attacked(const Board& board, int square, bool by_white)
+{
+    int file_king = index_to_file(square);
+    int rank_king = index_to_rank(square);
+    int tar_rank,tar_file;
+    Piece tar_p{};
+
+    // ------------------------------------
+    // check opponent pawns attacking king
+    // ------------------------------------
+
+    tar_rank = by_white ? rank_king - 1 : rank_king + 1;
+    int tar_files[2] = {file_king - 1, file_king + 1};
+    for (int tf : tar_files)
+    {
+        if (tf < 0 || tf > 7)
+            continue;
+
+        if (tar_rank < 0 || tar_rank > 7)
+            continue;
+
+        tar_p = board.squares[file_rank_to_index(tf, tar_rank)];
+
+        if (by_white && tar_p == WP)
+            return true;
+
+        if (!by_white && tar_p == BP)
+            return true;
+    }
+
+    // ------------------------------------
+    // opponent knight attacking square
+    // ------------------------------------
+    
+    for (int i = 0;i < 8; i++)
+    {
+        tar_file = file_king + KNIGHT_MOVES[i][0];
+        tar_rank = rank_king + KNIGHT_MOVES[i][1];
+
+        if (tar_file < 0 || tar_file > 7)
+            continue;
+        
+        if (tar_rank < 0 || tar_rank > 7)
+            continue;
+
+        tar_p = board.squares[file_rank_to_index(tar_file, tar_rank)];
+
+        if (by_white && tar_p == WN)
+            return true;
+
+        if (!by_white && tar_p == BN)
+            return true;
+    }
+    
+    // ------------------------------------
+    // opponent king attacks square
+    // ------------------------------------
+
+    for (int i = 0;i < 8; i++)
+    {
+        tar_file = file_king + KING_MOVES[i][0];
+        tar_rank = rank_king + KING_MOVES[i][1];
+
+        if (tar_file < 0 || tar_file > 7)
+            continue;
+        
+        if (tar_rank < 0 || tar_rank > 7)
+            continue;
+
+        tar_p = board.squares[file_rank_to_index(tar_file, tar_rank)];
+
+        if (by_white && tar_p == WK)
+            return true;
+
+        if (!by_white && tar_p == BK)
+            return true;
+    }
+    
+    // ------------------------------------
+    // bishop/queen diagonal attacks
+    // ------------------------------------
+    
+    for (int i = 0; i < 4;i++) // loop through each diagonal direction from start square
+    {
+        int curr_file = file_king;
+        int curr_rank = rank_king;
+
+        while (true)
+        {
+            int tar_file = curr_file + DIAGONAL_MOVES[i][0];
+            int tar_rank = curr_rank + DIAGONAL_MOVES[i][1];
+            
+            // stop if off board - try another diagonal
+            if (tar_file < 0 || tar_file > 7)
+                break;
+            if (tar_rank < 0 || tar_rank > 7)
+                break;
+
+            // target square and piece on that square
+            tar_p = board.squares[file_rank_to_index(tar_file, tar_rank)];
+
+            if (tar_p == Empty)
+            {
+                curr_file = tar_file;
+                curr_rank = tar_rank;
+                continue;
+            }
+
+            if (by_white && (tar_p == WB || tar_p == WQ))
+                return true;
+
+            if (!by_white && (tar_p == BB || tar_p == BQ))
+                return true;
+
+            break;
+        }
+    }
+
+    // ------------------------------------
+    // rook/queen straight attacks
+    // ------------------------------------
+
+    int directions[2] = {1, -1};
+
+    // moves along a rank
+    for (int dir : directions)
+    {
+        int curr_file = file_king;
+
+        while (true)
+        {
+            int tar_file = curr_file + dir;
+            
+            // stop if off board
+            if (tar_file < 0 || tar_file > 7)
+                break;
+        
+            // target square and piece on that square
+            tar_p = board.squares[file_rank_to_index(tar_file, rank_king)];
+
+            if (tar_p == Empty)
+            {
+                curr_file = tar_file;
+                continue;
+            }
+
+            if (by_white && (tar_p == WR || tar_p == WQ))
+                return true;
+
+            if (!by_white && (tar_p == BR || tar_p == BQ))
+                return true;
+
+            break;
+        }
+    }
+
+    // moves up and down a file
+    for (int dir : directions)
+    {
+        int curr_rank = rank_king;
+
+        while (true)
+        {
+            int tar_rank = curr_rank + dir;
+            
+            // stop if off board
+            if (tar_rank < 0 || tar_rank > 7)
+                break;
+        
+            // target square and piece on that square
+            tar_p = board.squares[file_rank_to_index(file_king, tar_rank)];
+
+            if (tar_p == Empty)
+            {
+                curr_rank = tar_rank;
+                continue;
+            }
+
+            if (by_white && (tar_p == WR || tar_p == WQ))
+                return true;
+
+            if (!by_white && (tar_p == BR || tar_p == BQ))
+                return true;
+
+            break;
+        }
+    }
+        return false;
+}

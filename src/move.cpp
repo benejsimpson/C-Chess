@@ -1,5 +1,5 @@
-#include "move.hpp"
-#include "board.hpp"
+#include "include/move.hpp"
+#include "include/board.hpp"
 
 // define struct Move
 

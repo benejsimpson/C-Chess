@@ -18,7 +18,7 @@
 */
 
 #pragma once
-#include "src\include\utils.h"
+#include "utils.h"
 
 constexpr uint8_t COLOUR_MASK = 0b11000;
 constexpr uint8_t TYPE_MASK   = 0b00111;
@@ -168,6 +168,8 @@ bool is_white(Piece piece);
 
 // true if piece is a black piece
 bool is_black(Piece piece);
+
+bool is_opponent(Piece my_piece, Piece test_piece);
 
 // gets the int value of piece
 uint8_t get_piece_type(Piece piece);
