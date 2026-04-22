@@ -46,8 +46,7 @@ void clear_board(Board &board)
     // Set en-passant square = -1
     board.en_passant_square = -1;
 
-    // Reset clocks
-    board.halfmove_clock = 0;
+    // Reset move counter
     board.fullmove_number = 1;
 }
 
@@ -86,7 +85,7 @@ void place_piece(Board &board, int square, Piece piece)
     int bb_ind = piece_to_bitboard_index(piece);
     if (bb_ind != -1)
     {
-        board.bitboards[bb_ind] + square;
+        board.bitboards[bb_ind] += square;
     }
 }
 
@@ -101,7 +100,7 @@ void remove_piece(Board &board, int square, Piece piece)
     int bb_ind = piece_to_bitboard_index(piece);
     if (bb_ind != -1)
     {
-        board.bitboards[bb_ind] - square;
+        board.bitboards[bb_ind] -= square;
     }
 }
 

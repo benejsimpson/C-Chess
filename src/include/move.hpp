@@ -1,15 +1,75 @@
 #pragma once
-#include "utils.h"
+#include <vector>
+#include <cstdint>
+#include "src\include\utils.h"
+#include "src\include\board.hpp"
 
-struct Board;
+// ---------------------------------
+// Move flags
+// ---------------------------------
 
-// move representation
-struct Move;
+enum MoveFlag : uint8_t
+{
+    QUIET = 0,      // normal move
+    CAPTURE,
 
-// apply move to board
-void make_move(Board& board, const Move& move);
+    DOUBLE_PAWN,    // pawn moves 2 squares
+    EN_PASSANT,
 
-// undo move (optional later)
-void undo_move(Board& board, const Move& move);
+    KING_CASTLE,    // king side castle
+    QUEEN_CASTLE,   // queen side castle
+
+    PROMOTION,      // pawn promotion (no capture)
+    PROMO_CAPTURE   // promotion with capture
+};
+
+
+// ---------------------------------
+// Move structure
+// ---------------------------------
+
+struct Move
+{
+    int from; // index of square
+    int to; // index of square
+
+    Piece piece;       // piece moving
+    Piece captured;    // captured piece
+
+    MoveFlag flag;     // special move type
+
+    Piece promotion;   // promotion piece (if any, else Empty)
+
+};
+
+
+// ---------------------------------
+// Helper functions
+// ---------------------------------
+
+// create a basic move
+inline Move make_move(int from, int to, Piece piece)
+{
+    return Move{
+        from,
+        to,
+        piece,
+        Empty,
+        QUIET,
+        Empty
+    };
+}
+
+// check if move is capture
+inline bool is_capture(const Move& m)
+{
+    return m.captured != Empty;
+}
+
+// check if move is promotion
+inline bool is_promotion(const Move& m)
+{
+    return m.flag == PROMOTION || m.flag == PROMO_CAPTURE;
+}
 
 

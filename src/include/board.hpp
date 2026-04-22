@@ -18,7 +18,7 @@
 */
 
 #pragma once
-#include "utils.h"
+#include "src\include\utils.h"
 
 constexpr uint8_t COLOUR_MASK = 0b11000;
 constexpr uint8_t TYPE_MASK   = 0b00111;
@@ -71,7 +71,7 @@ struct BitBoard
 
     // set bit at position
     // e.g. bb + 12
-    BitBoard& operator+(int square)
+    BitBoard& operator+=(int square)
     {
         bits |= (1ULL << square);
         return *this;
@@ -79,7 +79,7 @@ struct BitBoard
 
     // unset bit at position
     // e.g. bb - 12
-    BitBoard& operator-(int square)
+    BitBoard& operator-=(int square)
     {
         bits &= ~(1ULL << square);
         return *this;
@@ -99,13 +99,13 @@ struct BitBoard
 };
 
 // -------------------------
-// Board state
+//          Board
 // -------------------------
 
 struct Board
 {
     Piece squares[64]; // what is on each square of the board
-    BitBoard bitboards[12]; // bitboard for each piece and its positions - oper: +,-,[]
+    BitBoard bitboards[12]; // bitboard for each piece and its positions - oper: +=,-=,[]
 
     bool white_to_move; // who moves next
 
@@ -118,7 +118,6 @@ struct Board
     // updated to cell index when en-passant available
     int en_passant_square;   // -1 if none
 
-    int halfmove_clock;      // for 50-move rule
     int fullmove_number;     // starts at 1
 };
 
@@ -178,6 +177,13 @@ bool is_empty_p(Piece piece);
 void place_piece(Board& board, int square, Piece piece);
 void remove_piece(Board& board, int square, Piece piece);
 void move_piece(Board& board, int from, int to, Piece piece);
+void get_legal_moves(Board board, Piece piece);
+
+// --------------------------
+// Move calculations
+// --------------------------
+
+
 
 
 // -------------------------
