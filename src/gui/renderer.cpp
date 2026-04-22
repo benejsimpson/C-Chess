@@ -363,7 +363,6 @@ void Renderer::draw_side_panel(
     const TextBox& fen_box
 )
 {
-    (void)game;
     (void)gui;
 
     draw_button(window, flip_button, font);
@@ -371,12 +370,20 @@ void Renderer::draw_side_panel(
     draw_button(window, load_fen_button, font);
     draw_textbox(window, fen_box, font);
 
-    // TODO:
-    // Add extra side-panel text later:
-    // - side to move
-    // - FEN
-    // - move count
-    // - status message
+    sf::Text status_label(font, "Status", 18);
+    status_label.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 270.f));
+    status_label.setFillColor(sf::Color::White);
+    window.draw(status_label);
+
+    sf::Text status_text(font, game.get_status_text(), 18);
+    status_text.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 296.f));
+    status_text.setFillColor(sf::Color(220, 220, 220));
+    window.draw(status_text);
+
+    sf::Text fen_label(font, "FEN", 18);
+    fen_label.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 124.f));
+    fen_label.setFillColor(sf::Color::White);
+    window.draw(fen_label);
 }
 
 // --------------------------------------------------

@@ -1,20 +1,15 @@
 #include "core/move.hpp"
 #include "core/board.hpp"
 
-// define struct Move
-
-// implement make_move
 void apply_move(Board &board, const Move &move)
 {
-    // move piece
-    board.squares[move.to] = move.piece;
+    Piece moved_piece = move.piece;
+    if (is_promotion(move) && move.promotion != Empty)
+    {
+        moved_piece = move.promotion;
+    }
 
-    // clear original square
     board.squares[move.from] = Empty;
-
-    // (captured piece is overwritten automatically)
-
-    // switch turn
+    board.squares[move.to] = moved_piece;
     board.white_to_move = !board.white_to_move;
 }
-// implement undo_move

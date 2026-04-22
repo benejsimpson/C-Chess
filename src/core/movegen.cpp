@@ -128,10 +128,6 @@ static bool is_legal_position_after_move(const Board &board, const Move &move)
 */
 
 static void generate_pawn_moves(const Board &board, vector<Move> &moves, int square)
-// TO DO:
-// - en passant
-// - promotion
-
 {
     Piece pawn = board.squares[square];
     bool white = is_white(pawn);
@@ -139,15 +135,26 @@ static void generate_pawn_moves(const Board &board, vector<Move> &moves, int squ
     int target = square + direction;
     int pawnrank = white ? 1 : 6;
     int pawnfile = index_to_file(square);
+    int promotion_rank = white ? 7 : 0;
 
     if (!is_valid_index(target))
         return;
 
-    // moving forward 1 or 2 squares if on pawn rank
     Piece target_p = board.squares[target];
     if (is_empty_p(target_p))
     {
-        moves.push_back(create_move(square, target, pawn, Empty));
+        if (index_to_rank(target) == promotion_rank)
+        {
+            Piece promotions[4] = {white ? WQ : BQ, white ? WR : BR, white ? WB : BB, white ? WN : BN};
+            for (Piece promotion : promotions)
+            {
+                moves.push_back(Move{square, target, pawn, Empty, PROMOTION, promotion});
+            }
+        }
+        else
+        {
+            moves.push_back(create_move(square, target, pawn, Empty));
+        }
 
         target_p = board.squares[square + (2 * direction)];
         if (index_to_rank(square) == pawnrank && is_empty_p(target_p))
@@ -166,7 +173,18 @@ static void generate_pawn_moves(const Board &board, vector<Move> &moves, int squ
         target_p = board.squares[target + lr];
         if (!is_empty_p(target_p) && is_opponent(pawn, target_p))
         {
-            moves.push_back(create_move(square, target + lr, pawn, target_p));
+            if (index_to_rank(target + lr) == promotion_rank)
+            {
+                Piece promotions[4] = {white ? WQ : BQ, white ? WR : BR, white ? WB : BB, white ? WN : BN};
+                for (Piece promotion : promotions)
+                {
+                    moves.push_back(Move{square, target + lr, pawn, target_p, PROMO_CAPTURE, promotion});
+                }
+            }
+            else
+            {
+                moves.push_back(create_move(square, target + lr, pawn, target_p));
+            }
         }
     }
 }
@@ -366,13 +384,22 @@ static void generate_king_moves(const Board &board, vector<Move> &moves, int squ
 
 int find_king_square(const Board &board, bool white_king)
 {
-    BitBoard bb = white_king ? board.bitboards[piece_to_bitboard_index(WK)] : board.bitboards[piece_to_bitboard_index(BK)];
-    return __builtin_ctzll(bb.bits);
+    const Piece king = white_king ? WK : BK;
+
+    for (int square = 0; square < 64; ++square)
+    {
+        if (board.squares[square] == king)
+            return square;
+    }
+
+    return -1;
 }
 
 bool is_in_check(const Board &board, bool white_king)
 {
     int king_square = find_king_square(board, white_king);
+    if (king_square == -1)
+        return false;
 
     if (white_king)
         return is_square_attacked(board, king_square, false);
@@ -568,4 +595,29 @@ bool is_square_attacked(const Board &board, int square, bool by_white)
         }
     }
     return false;
+}
+
+std::vector<Move> generate_legal_moves_for_square(const Board& board, int square)
+{
+    std::vector<Move> moves;
+
+    for (const Move& move : generate_legal_moves(board))
+    {
+        if (move.from == square)
+        {
+            moves.push_back(move);
+        }
+    }
+
+    return moves;
+}
+
+bool same_move(const Move& a, const Move& b)
+{
+    return a.from == b.from &&
+           a.to == b.to &&
+           a.piece == b.piece &&
+           a.captured == b.captured &&
+           a.flag == b.flag &&
+           a.promotion == b.promotion;
 }
