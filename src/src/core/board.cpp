@@ -1,5 +1,5 @@
-#include "include/utils.h"
-#include "include/board.hpp"
+#include "core/utils.h"
+#include "core/board.hpp"
 #include <cctype>
 
 using namespace std;

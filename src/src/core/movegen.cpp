@@ -1,7 +1,7 @@
-#include "include/movegen.hpp"
-#include "include/makemove.hpp"
-#include "include/board.hpp"
-#include "include/move.hpp"
+#include "core/movegen.hpp"
+#include "core/makemove.hpp"
+#include "core/board.hpp"
+#include "core/move.hpp"
 
 #include <vector>
 using namespace std;

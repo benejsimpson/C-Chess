@@ -1,6 +1,6 @@
-#include "include/utils.h"
-#include "include/fen.hpp"
-#include "include/board.hpp"
+#include "core/utils.h"
+#include "core/fen.hpp"
+#include "core/board.hpp"
 
 const std::string START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 

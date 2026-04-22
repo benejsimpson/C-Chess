@@ -1,8 +1,8 @@
-#include "include/utils.h"
-#include "include/fen.hpp"
-#include "include/board.hpp"
-#include "include/move.hpp"
-#include "include/movegen.hpp"
+#include "core/utils.h"
+#include "core/fen.hpp"
+#include "core/board.hpp"
+#include "core/move.hpp"
+#include "core/movegen.hpp"
 
 // g++ -std=c++17 -Wall -Wextra -g3 test.cpp board.cpp fen.cpp move.cpp movegen.cpp -o test.exe
 
