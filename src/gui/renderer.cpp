@@ -40,10 +40,10 @@ static void draw_button(
 {
     sf::RectangleShape rect;
     rect.setPosition(
-        sf::Vector2f(button.bounds.left, button.bounds.top)
+        sf::Vector2f(button.bounds.position.x, button.bounds.position.y)
     );
     rect.setSize(
-        sf::Vector2f(button.bounds.width, button.bounds.height)
+        sf::Vector2f(button.bounds.size.x, button.bounds.size.y)
     );
     rect.setFillColor(sf::Color(60, 60, 60));
     rect.setOutlineThickness(2.f);
@@ -55,8 +55,8 @@ static void draw_button(
 
     sf::FloatRect text_bounds = text.getLocalBounds();
     text.setPosition(sf::Vector2f(
-        button.bounds.left + (button.bounds.width  - text_bounds.size.x) / 2.f,
-        button.bounds.top  + (button.bounds.height - text_bounds.size.y) / 2.f - 6.f
+        button.bounds.position.x + (button.bounds.size.x  - text_bounds.size.x) / 2.f,
+        button.bounds.position.y  + (button.bounds.size.y - text_bounds.size.y) / 2.f - 6.f
     ));
 
     window.draw(text);
@@ -70,10 +70,10 @@ static void draw_textbox(
 {
     sf::RectangleShape rect;
     rect.setPosition(
-        sf::Vector2f(box.bounds.left, box.bounds.top)
+        sf::Vector2f(box.bounds.position.x, box.bounds.position.y)
     );
     rect.setSize(
-        sf::Vector2f(box.bounds.width, box.bounds.height)
+        sf::Vector2f(box.bounds.size.x, box.bounds.size.y)
     );
     rect.setFillColor(sf::Color(35, 35, 35));
     rect.setOutlineThickness(2.f);
@@ -83,8 +83,8 @@ static void draw_textbox(
     sf::Text text(font, box.text, 18);
     text.setFillColor(sf::Color::White);
     text.setPosition(sf::Vector2f(
-        box.bounds.left + 8.f,
-        box.bounds.top + 8.f
+        box.bounds.position.x + 8.f,
+        box.bounds.position.y + 8.f
     ));
     window.draw(text);
 }

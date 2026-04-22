@@ -281,8 +281,3 @@ Piece char_to_piece(char c)
         return Empty;
     }
 }
-
-// -------------------------
-// Testing
-// -------------------------
-
