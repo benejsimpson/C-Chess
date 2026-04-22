@@ -1,0 +1,50 @@
+#pragma once
+#include <string>
+#include <vector>
+#include "move.hpp"
+#include "board.hpp"
+
+struct GuiState
+{
+    // -------------------------
+    // Selection
+    // -------------------------
+    int selected_square = -1;
+    std::vector<Move> selected_moves;
+
+    // -------------------------
+    // Dragging
+    // -------------------------
+    bool dragging = false;
+    int drag_from_square = -1;
+    int drag_hover_square = -1;
+
+    float drag_mouse_x = 0.0f;
+    float drag_mouse_y = 0.0f;
+
+    Piece dragged_piece = Empty;
+
+    // -------------------------
+    // Board state (visual)
+    // -------------------------
+    bool board_flipped = false;
+
+    // -------------------------
+    // Illegal move feedback
+    // -------------------------
+    bool show_illegal_flash = false;
+    int illegal_flash_square = -1;
+    float illegal_flash_timer = 0.0f;
+
+    // -------------------------
+    // Promotion
+    // -------------------------
+    bool show_promotion_popup = false;
+    Move pending_promotion_move{};
+
+    // -------------------------
+    // FEN input
+    // -------------------------
+    std::string fen_input;
+    bool typing_fen = false;
+};

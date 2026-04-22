@@ -48,7 +48,7 @@ struct Move
 // ---------------------------------
 
 // create a basic move
-inline Move make_move(int from, int to, Piece piece, Piece captured)
+inline Move create_move(int from, int to, Piece piece, Piece captured)
 {
     return Move{
         from,
@@ -59,6 +59,8 @@ inline Move make_move(int from, int to, Piece piece, Piece captured)
         Empty
     };
 }
+
+void apply_move(Board &board, const Move &move);
 
 // check if move is capture
 inline bool is_capture(const Move& m)
@@ -72,4 +74,5 @@ inline bool is_promotion(const Move& m)
     return m.flag == PROMOTION || m.flag == PROMO_CAPTURE;
 }
 
-
+bool is_castle(const Move& m);
+bool is_en_passant(const Move& m);
