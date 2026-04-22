@@ -1,17 +1,4 @@
-#pragma once
-#include <SFML/Graphics.hpp>
-#include "board.hpp"
-
-class TextureManager
-{
-private:
-    sf::Texture piece_textures[12]; // indexed using piece_to_bitboard_index
-
-public:
-    bool load_piece_textures();
-
-    const sf::Texture& get_piece_texture(Piece piece) const;
-};
+#include "gui/textures.hpp"
 
 bool TextureManager::load_piece_textures()
 {
@@ -21,7 +8,7 @@ bool TextureManager::load_piece_textures()
         const char* file;
     };
 
-    Entry entries[] = {
+    const Entry entries[] = {
         {WP, "assets/pieces/wp.png"},
         {WN, "assets/pieces/wn.png"},
         {WB, "assets/pieces/wb.png"},
@@ -38,11 +25,22 @@ bool TextureManager::load_piece_textures()
 
     for (const auto& e : entries)
     {
-        int index = piece_to_bitboard_index(e.piece);
-
-        if (!piece_textures[index].loadFromFile(e.file))
+        const int index = piece_to_bitboard_index(e.piece);
+        if (index < 0 || !piece_textures[index].loadFromFile(e.file))
             return false;
     }
 
     return true;
+}
+
+// --------------------------------------------------
+// Returns the texture for a given piece
+// --------------------------------------------------
+const sf::Texture& TextureManager::get_piece_texture(Piece piece) const
+{
+    // Convert piece to index (0–11)
+    int index = piece_to_bitboard_index(piece);
+
+    // Return the corresponding texture
+    return piece_textures[index];
 }

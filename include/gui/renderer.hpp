@@ -1,9 +1,12 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include "game.hpp"
-#include "gui_state.hpp"
-#include "textures.hpp"
-#include "widgets.hpp"
+
+// Forward declarations of your own types
+class Game;
+struct GuiState;
+class TextureManager;
+struct Button;
+struct TextBox;
 
 class Renderer
 {

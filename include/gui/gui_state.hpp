@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "move.hpp"
-#include "board.hpp"
+#include "core/move.hpp"
+#include "core/board.hpp"
 
 struct GuiState
 {
@@ -25,12 +25,12 @@ struct GuiState
     Piece dragged_piece = Empty;
 
     // -------------------------
-    // Board state (visual)
+    // Board state
     // -------------------------
     bool board_flipped = false;
 
     // -------------------------
-    // Illegal move feedback
+    // Illegal moves
     // -------------------------
     bool show_illegal_flash = false;
     int illegal_flash_square = -1;

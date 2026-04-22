@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "name": "Win32",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "C:/Users/Ben/Documents/GitHub/C++ Chess REPO/C++ Chess",
+        "C:/Users/Ben/Documents/GitHub/C++ Chess REPO/C++ Chess",
+        "C:/Users/Ben/Documents/GitHub/C++ Chess REPO/C++ Chess",
+        "C:/Users/Ben/Documents/GitHub/C++ Chess REPO/C++ Chess/include",
+        "C:/msys64/ucrt64/include",
+        "C:/msys64/ucrt64/include/SFML",
+        "C:/msys64/ucrt64/include/c++/**"
+      ],
+      "compilerPath": "C:/msys64/ucrt64/bin/g++.exe",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-gcc-x64"
+    }
+  ],
+  "version": 4
+}
