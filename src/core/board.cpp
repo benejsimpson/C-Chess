@@ -1,5 +1,6 @@
 #include "core/utils.h"
 #include "core/board.hpp"
+#include "core/fen.hpp"
 #include <cctype>
 
 using namespace std;
@@ -206,6 +207,7 @@ bit64 square_to_bit(int square)
 
 void load_start_position(Board &board)
 {
+    load_fen(board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w");
 }
 
 // -------------------------

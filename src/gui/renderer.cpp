@@ -13,7 +13,7 @@
 
 namespace
 {
-int find_king_square(const Board& board, bool white_king)
+int find_checked_king_square(const Board& board, bool white_king)
 {
     const Piece king = white_king ? WK : BK;
 
@@ -242,7 +242,7 @@ void Renderer::draw_check_highlight(sf::RenderWindow& window, const Game& game, 
         return;
 
     const Board& board = game.get_board();
-    const int king_square = find_king_square(board, game.white_to_move());
+    const int king_square = find_checked_king_square(board, game.white_to_move());
     if (king_square == -1)
         return;
 

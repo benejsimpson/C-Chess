@@ -159,7 +159,7 @@ static void generate_pawn_moves(const Board &board, vector<Move> &moves, int squ
         target_p = board.squares[square + (2 * direction)];
         if (index_to_rank(square) == pawnrank && is_empty_p(target_p))
         {
-            moves.push_back(create_move(square, square + (2 * direction), pawn, Empty));
+            moves.push_back(Move{square, square + (2 * direction), pawn, Empty, DOUBLE_PAWN, Empty});
         }
     }
 

@@ -178,8 +178,7 @@ bool is_empty_p(Piece piece);
 
 void place_piece(Board& board, int square, Piece piece);
 void remove_piece(Board& board, int square, Piece piece);
-void move_piece(Board& board, int from, int to, Piece piece);
-void get_legal_moves(Board board, Piece piece);
+void move_piece(Board& board, int from, int to);
 
 // --------------------------
 // Move calculations
