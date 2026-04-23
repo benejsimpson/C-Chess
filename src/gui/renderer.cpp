@@ -28,8 +28,7 @@ int find_checked_king_square(const Board& board, bool white_king)
 }
 
 // --------------------------------------------------
-// Small local helpers
-// Only used inside this file
+// Rendering helpers
 // --------------------------------------------------
 
 static void draw_button(
@@ -271,11 +270,6 @@ void Renderer::draw_pieces(
     const TextureManager& textures
 )
 {
-    // TODO:
-    // Match this with your Game class.
-    // Expected:
-    // const Board& board = game.get_board();
-
     const Board& board = game.get_board();
 
     const float square_size = static_cast<float>(SQUARE_SIZE);
@@ -289,8 +283,7 @@ void Renderer::draw_pieces(
         if (piece == Empty)
             continue;
 
-        // If dragging, do not draw the original square version
-        // of the dragged piece.
+        // if dragging, do not draw the original square version of the dragged piece.
         if (gui.dragging && square == gui.drag_from_square)
             continue;
 

@@ -2,7 +2,6 @@
 
 // --------------------------------------------------
 // Internal helpers
-// Only used inside this file
 // --------------------------------------------------
 
 static bool is_rook_start_square(int square, Piece piece)
@@ -60,27 +59,27 @@ void apply_move(Board& board, const Move& move)
     Piece moved_piece = move.piece;
     Piece captured_piece = move.captured;
 
-    // By default, a move removes any en passant chance.
-    // It will be set again below only for a double pawn move.
+    // move removes possible en-passant
+    // allow en-passant only when double pawn move
     board.en_passant_square = -1;
 
     // ------------------------------------------
-    // Update castling rights BEFORE moving pieces
+    // Update castling rights before moving pieces
     // ------------------------------------------
 
-    // If a king moves, that side loses both castling rights.
+    // if king moves, that side loses both castling rights
     if (get_piece_type(moved_piece) == KING)
     {
         remove_castling_rights_for_king(board, moved_piece);
     }
 
-    // If a rook moves from its original square, that side loses that rook's castling right.
+    // if a rook moves from its original square, that side loses that rook's castling right
     if (get_piece_type(moved_piece) == ROOK)
     {
         remove_castling_rights_for_rook(board, move.from, moved_piece);
     }
 
-    // If a rook is captured on its original square, that side loses that castling right.
+    // if a rook is captured on its original square, that side loses that castling right
     if (captured_piece != Empty && get_piece_type(captured_piece) == ROOK)
     {
         remove_castling_rights_for_rook(board, move.to, captured_piece);
@@ -90,7 +89,7 @@ void apply_move(Board& board, const Move& move)
     // Handle move by flag
     // ------------------------------------------
 
-    // 1. En passant capture
+    // en passant capture
     if (move.flag == EN_PASSANT)
     {
         move_piece(board, move.from, move.to);
@@ -106,7 +105,7 @@ void apply_move(Board& board, const Move& move)
         remove_piece(board, captured_square, captured_piece);
     }
 
-    // 2. King-side castle
+    // king-side castle
     else if (move.flag == KING_CASTLE)
     {
         move_piece(board, move.from, move.to);

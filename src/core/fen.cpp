@@ -30,7 +30,7 @@ void load_fen(Board &board, const std::string &fen)
     {
         if (c == '/')
         {
-            --rank;
+            rank--;
             file = 0;
             continue;
         }
@@ -50,7 +50,7 @@ void load_fen(Board &board, const std::string &fen)
             place_piece(board, rank * 8 + file, piece);
         }
 
-        ++file;
+        file++;
     }
 
     board.white_to_move = (active_colour != "b");
@@ -60,11 +60,11 @@ std::string export_fen(const Board& board)
 {
     std::string fen;
 
-    for (int rank = 7; rank >= 0; --rank)
+    for (int rank = 7; rank >= 0; rank--)
     {
         int empty_count = 0;
 
-        for (int file = 0; file < 8; ++file)
+        for (int file = 0; file < 8; file++)
         {
             const Piece piece = board.squares[file_rank_to_index(file, rank)];
             if (piece == Empty)
