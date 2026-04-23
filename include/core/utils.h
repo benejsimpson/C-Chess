@@ -6,4 +6,4 @@
 #include <bit>
 #include <vector>
 
-const char newl = '\n';
+const char nl = '\n'; // used mainly for debugging

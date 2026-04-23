@@ -20,7 +20,7 @@ bool ChessGui::init()
 {
     window.create(
         sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}),
-        "Chess++",
+        "Chess++ - Benjamin Simpson",
         sf::Style::Titlebar | sf::Style::Close
     );
     window.setFramerateLimit(60);

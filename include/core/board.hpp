@@ -180,13 +180,6 @@ void place_piece(Board& board, int square, Piece piece);
 void remove_piece(Board& board, int square, Piece piece);
 void move_piece(Board& board, int from, int to);
 
-// --------------------------
-// Move calculations
-// --------------------------
-
-
-
-
 // -------------------------
 // Position loading
 // -------------------------

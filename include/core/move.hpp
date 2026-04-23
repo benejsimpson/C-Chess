@@ -30,8 +30,8 @@ enum MoveFlag : uint8_t
 
 struct Move
 {
-    int from; // index of square
-    int to; // index of square
+    int from;           // index of square moved from
+    int to;             // index of square moved to
 
     Piece piece;       // piece moving
     Piece captured;    // captured piece

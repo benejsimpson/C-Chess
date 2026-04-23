@@ -158,7 +158,7 @@ void Renderer::draw_board(sf::RenderWindow& window, const GuiState& gui)
         ));
         tile.setSize(sf::Vector2f(square_size, square_size));
 
-        bool light = ((file + rank) % 2 == 0);
+        bool light = ((file + rank) % 2 == 1);
         tile.setFillColor(light ? light_square : dark_square);
 
         window.draw(tile);

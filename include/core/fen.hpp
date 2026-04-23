@@ -1,10 +1,7 @@
 #pragma once
 #include "utils.h"
 
-/*
-    Parse FEN & load position
-*/
-
+//    Parse FEN & load position
 struct Board;
 
 // load FEN into board

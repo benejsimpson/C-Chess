@@ -3,8 +3,11 @@
 #include "board.hpp"
 #include "move.hpp"
 
+// generates all possible moves that can be made by a side
 std::vector<Move> generate_pseudo_legal_moves(const Board &board);
+// generates only legal moves that can be made - not in check after
 std::vector<Move> generate_legal_moves(const Board &board);
+// legal move generation for a specific piece on a square
 std::vector<Move> generate_legal_moves_for_square(const Board& board, int square);
 
 bool same_move(const Move& a, const Move& b);

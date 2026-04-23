@@ -33,9 +33,8 @@ bool TextureManager::load_piece_textures()
     return true;
 }
 
-// --------------------------------------------------
-// Returns the texture for a given piece
-// --------------------------------------------------
+
+// returns the texture for a given piece
 const sf::Texture& TextureManager::get_piece_texture(Piece piece) const
 {
     // Convert piece to index (0–11)

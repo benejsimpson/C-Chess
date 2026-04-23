@@ -160,7 +160,7 @@ bool is_valid_index(int index, bool test)
 {
     if (!(0 <= index && index < 64) && test)
     {
-        cout << "INVALD INDEX : " << index << newl;
+        cout << "INVALD INDEX : " << index << nl;
     }
     return 0 <= index && index < 64;
 }

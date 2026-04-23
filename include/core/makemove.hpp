@@ -2,8 +2,8 @@
 #include "board.hpp"
 #include "move.hpp"
 
-// Apply one move to the board.
-// This updates:
+// Apply one move to the board
+// updates:
 // - squares
 // - bitboards
 // - side to move
