@@ -33,10 +33,10 @@ Code split into two main layers:
 
 How it works:
 
-1. ChessGui owns a Game object.
-2. Game owns a Board.
-3. The GUI asks Game for legal moves, board state, status text, and FEN.
-4. Input events create Move attempts.
-5. Game::try_make_move() validates the move against generated legal moves.
+1. `ChessGui` owns a `Game` object.
+2. `Game` owns a `Board`.
+3. The GUI asks `Game` for legal moves, board state, status text, and FEN.
+4. Input events create `Move` attempts.
+5. `Game::try_make_move()` validates the move against generated legal moves.
 6. If valid, the move is applied to the board.
 7. The renderer draws the updated board and UI.
