@@ -75,6 +75,7 @@ void InputHandler::handle_event(
     Game& game,
     GuiState& gui,
     Button& flip_button,
+    Button& auto_flip_button,
     Button& copy_fen_button,
     Button& load_fen_button,
     TextBox& fen_box
@@ -114,6 +115,7 @@ void InputHandler::handle_event(
                 game,
                 gui,
                 flip_button,
+                auto_flip_button,
                 copy_fen_button,
                 load_fen_button,
                 fen_box
@@ -156,6 +158,7 @@ void InputHandler::handle_mouse_press(
     Game& game,
     GuiState& gui,
     Button& flip_button,
+    Button& auto_flip_button,
     Button& copy_fen_button,
     Button& load_fen_button,
     TextBox& fen_box
@@ -178,6 +181,16 @@ void InputHandler::handle_mouse_press(
     if (is_mouse_over_button(flip_button, mouse_pos))
     {
         gui.board_flipped = !gui.board_flipped;
+        gui.flip_every_turn = false;
+        clear_selection(gui);
+        return;
+    }
+
+    if (is_mouse_over_button(auto_flip_button, mouse_pos))
+    {
+        gui.flip_every_turn = !gui.flip_every_turn;
+        if (gui.flip_every_turn)
+            gui.board_flipped = !game.white_to_move();
         clear_selection(gui);
         return;
     }

@@ -350,10 +350,12 @@ static void generate_queen_moves(const Board &board, vector<Move> &moves, int sq
 
 static void generate_king_moves(const Board &board, vector<Move> &moves, int square)
 {
+    Piece king = board.squares[square];
+
+    bool white = is_white(king);
+
     int start_file = index_to_file(square);
     int start_rank = index_to_rank(square);
-
-    Piece king = board.squares[square];
 
     for (int i = 0; i < 8; i++)
     {
@@ -379,7 +381,57 @@ static void generate_king_moves(const Board &board, vector<Move> &moves, int squ
         }
     }
 
-    // TO DO: castling
+    if ( // king is not on original square -> return
+        white
+            ? board.bitboards[piece_to_bitboard_index(WK)][4] == 0
+            : board.bitboards[piece_to_bitboard_index(BK)][60] == 0)
+        return;
+
+    if ( // castling rights exist for king side -> continue
+        white
+            ? board.white_king_side
+            : board.black_king_side)
+    {
+        if ( // rook is in starting position
+            white
+                ? board.squares[7] == WR
+                : board.squares[63] == BR)
+        {
+            bool path_clear = white
+                                  ? (is_empty_p(board.squares[5]) && is_empty_p(board.squares[6]))
+                                  : (is_empty_p(board.squares[61]) && is_empty_p(board.squares[62]));
+
+            bool path_safe = white
+                                 ? (!is_square_attacked(board, 5, false) && !is_square_attacked(board, 6, false))
+                                 : (!is_square_attacked(board, 61, true) && !is_square_attacked(board, 62, true));
+
+            if (!is_in_check(board, white) && path_clear && path_safe)
+            {
+                moves.push_back(
+                    create_move(square, white ? 6 : 62, king, Empty, KING_CASTLE));
+            }
+        }
+    }
+
+    if (white ? board.white_queen_side : board.black_queen_side)
+    {
+        if (white ? board.squares[0] == WR : board.squares[56] == BR) // check rooks still in place
+        {
+            bool path_clear = white
+                                  ? (is_empty_p(board.squares[1]) && is_empty_p(board.squares[2]) && is_empty_p(board.squares[3]))
+                                  : (is_empty_p(board.squares[57]) && is_empty_p(board.squares[58]) && is_empty_p(board.squares[59]));
+
+            bool path_safe = white
+                                 ? (!is_square_attacked(board, 2, false) && !is_square_attacked(board, 3, false))
+                                 : (!is_square_attacked(board, 58, true) && !is_square_attacked(board, 59, true));
+
+            if ((!is_in_check(board, white) && path_clear && path_safe))
+            {
+                moves.push_back(
+                    create_move(square, white ? 2 : 58, king, Empty, QUEEN_CASTLE));
+            }
+        }
+    }
 }
 
 int find_king_square(const Board &board, bool white_king)
@@ -597,11 +649,11 @@ bool is_square_attacked(const Board &board, int square, bool by_white)
     return false;
 }
 
-std::vector<Move> generate_legal_moves_for_square(const Board& board, int square)
+std::vector<Move> generate_legal_moves_for_square(const Board &board, int square)
 {
     std::vector<Move> moves;
 
-    for (const Move& move : generate_legal_moves(board))
+    for (const Move &move : generate_legal_moves(board))
     {
         if (move.from == square)
         {
@@ -612,7 +664,7 @@ std::vector<Move> generate_legal_moves_for_square(const Board& board, int square
     return moves;
 }
 
-bool same_move(const Move& a, const Move& b)
+bool same_move(const Move &a, const Move &b)
 {
     return a.from == b.from &&
            a.to == b.to &&

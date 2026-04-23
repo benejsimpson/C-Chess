@@ -121,7 +121,7 @@ void apply_move(Board& board, const Move& move)
         }
     }
 
-    // 3. Queen-side castle
+    // queen-side castle
     else if (move.flag == QUEEN_CASTLE)
     {
         move_piece(board, move.from, move.to);
@@ -137,14 +137,14 @@ void apply_move(Board& board, const Move& move)
         }
     }
 
-    // 4. Promotion without capture
+    // promotion without capture
     else if (move.flag == PROMOTION)
     {
         remove_piece(board, move.from, moved_piece);
         place_piece(board, move.to, move.promotion);
     }
 
-    // 5. Promotion with capture
+    // promotion with capture
     else if (move.flag == PROMO_CAPTURE)
     {
         remove_piece(board, move.from, moved_piece);
@@ -152,7 +152,7 @@ void apply_move(Board& board, const Move& move)
         place_piece(board, move.to, move.promotion);
     }
 
-    // 6. Normal move / normal capture / double pawn move
+    // normal move / normal capture / double pawn move
     else
     {
         if (captured_piece != Empty)
@@ -172,15 +172,11 @@ void apply_move(Board& board, const Move& move)
         }
     }
 
-    // ------------------------------------------
-    // Change side to move
-    // ------------------------------------------
+    // change side to move
     board.white_to_move = !board.white_to_move;
 
-    // ------------------------------------------
-    // Fullmove number
-    // Increment after Black moves
-    // ------------------------------------------
+
+    // increment fullmove_number after black moves
     if (board.white_to_move)
     {
         board.fullmove_number++;

@@ -17,6 +17,7 @@ public:
         const TextureManager& textures,
         const sf::Font& font,
         const Button& flip_button,
+        const Button& auto_flip_button,
         const Button& copy_fen_button,
         const Button& load_fen_button,
         const TextBox& fen_box
@@ -36,6 +37,7 @@ private:
         const GuiState& gui,
         const sf::Font& font,
         const Button& flip_button,
+        const Button& auto_flip_button,
         const Button& copy_fen_button,
         const Button& load_fen_button,
         const TextBox& fen_box

@@ -9,6 +9,14 @@ const std::array<const char*, 3> kFontCandidates = {
     "C:/Windows/Fonts/segoeui.ttf",
     "C:/Windows/Fonts/arial.ttf"
 };
+
+void sync_board_orientation(const Game& game, GuiState& gui)
+{
+    if (!gui.flip_every_turn)
+        return;
+
+    gui.board_flipped = !game.white_to_move();
+}
 }
 
 ChessGui::ChessGui()
@@ -43,6 +51,7 @@ bool ChessGui::init()
 
     game.reset_to_start();
     gui = GuiState{};
+    sync_board_orientation(game, gui);
     fen_box.text = game.get_fen();
     gui.fen_input = fen_box.text;
     return true;
@@ -62,6 +71,7 @@ void ChessGui::run()
                 game,
                 gui,
                 flip_button,
+                auto_flip_button,
                 copy_fen_button,
                 load_fen_button,
                 fen_box
@@ -70,6 +80,7 @@ void ChessGui::run()
 
         const float dt = clock.restart().asSeconds();
         input.update(game, gui, dt);
+        sync_board_orientation(game, gui);
 
         if (!gui.typing_fen)
         {
@@ -88,6 +99,7 @@ void ChessGui::run()
             textures,
             font,
             flip_button,
+            auto_flip_button,
             copy_fen_button,
             load_fen_button,
             fen_box
@@ -100,13 +112,16 @@ void ChessGui::setup_widgets()
     flip_button.bounds = sf::FloatRect({static_cast<float>(PANEL_LEFT), 40.f}, {150.f, 42.f});
     flip_button.label = "Flip Board";
 
-    copy_fen_button.bounds = sf::FloatRect({static_cast<float>(PANEL_LEFT), 96.f}, {150.f, 42.f});
+    auto_flip_button.bounds = sf::FloatRect({static_cast<float>(PANEL_LEFT), 96.f}, {150.f, 42.f});
+    auto_flip_button.label = "Flip Every Turn";
+
+    copy_fen_button.bounds = sf::FloatRect({static_cast<float>(PANEL_LEFT), 152.f}, {150.f, 42.f});
     copy_fen_button.label = "Copy FEN";
 
-    load_fen_button.bounds = sf::FloatRect({static_cast<float>(PANEL_LEFT), 210.f}, {150.f, 42.f});
+    load_fen_button.bounds = sf::FloatRect({static_cast<float>(PANEL_LEFT), 266.f}, {150.f, 42.f});
     load_fen_button.label = "Load FEN";
 
-    fen_box.bounds = sf::FloatRect({static_cast<float>(PANEL_LEFT), 152.f}, {160.f, 48.f});
+    fen_box.bounds = sf::FloatRect({static_cast<float>(PANEL_LEFT), 208.f}, {160.f, 48.f});
     fen_box.text.clear();
     fen_box.active = false;
     fen_box.cursor_pos = 0;
