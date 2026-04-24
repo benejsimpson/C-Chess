@@ -15,14 +15,14 @@ This project is still in-progress. The codebase already supports:
 - Board representation
 - Piece placement and board helpers
 - FEN loading and exporting
-- Basic legal move generation
+- Full legal move generation
 - Move application
 - A playable SFML board UI with drag-and-drop
-- Board flipping
+- Board flipping and automatic flipping for each turn
 - FEN copy/load in the GUI
 - Move highlighting, check highlight, illegal move flash, and promotion popup
 
-This does not yet fully support a complete chess engine feature set. Some rules and systems are unfinished.
+This does not yet fully support a complete chess engine feature set.
 
 ## Architecture Overview
 
