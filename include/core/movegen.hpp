@@ -1,7 +1,7 @@
 #pragma once
-#include <vector>
 #include "board.hpp"
 #include "move.hpp"
+#include <vector>
 
 // generates all possible moves that can be made by a side
 std::vector<Move> generate_pseudo_legal_moves(const Board &board);

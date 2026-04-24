@@ -180,6 +180,7 @@ inline constexpr bool is_valid_file_rank(int file, int rank)
 {
     return 0 <= file && file <= 7 &&
            0 <= rank && rank <= 7;
+}
 
 inline std::string square_to_name(int square)
 {
@@ -297,9 +298,6 @@ inline constexpr bool is_piece_on_board(const Board &board, Piece piece)
     return board.bitboards[piece_to_bb_ind(piece)].bits != 0;
 }
 
-void place_piece(Board& board, int square, Piece piece);
-void remove_piece(Board& board, int square, Piece piece);
-void move_piece(Board& board, int from, int to);
 void place_piece(Board &board, int square, Piece piece);
 void remove_piece(Board &board, int square, Piece piece);
 void move_piece(Board &board, int from, int to);
