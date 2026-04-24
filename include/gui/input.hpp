@@ -13,6 +13,7 @@ public:
         Game& game,
         GuiState& gui,
         Button& flip_button,
+        Button& auto_flip_button,
         Button& copy_fen_button,
         Button& load_fen_button,
         TextBox& fen_box
@@ -26,6 +27,7 @@ private:
         Game& game,
         GuiState& gui,
         Button& flip_button,
+        Button& auto_flip_button,
         Button& copy_fen_button,
         Button& load_fen_button,
         TextBox& fen_box

@@ -105,7 +105,11 @@ void move_piece(Board &board, int from, int to)
 
 void load_start_position(Board &board)
 {
-    load_fen(board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w");
+    load_fen(board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
+    board.white_king_side = true;
+    board.white_queen_side = true;
+    board.black_king_side = true;
+    board.black_queen_side = true;
 }
 
 // -------------------------

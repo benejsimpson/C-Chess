@@ -99,6 +99,7 @@ void Renderer::draw(
     const TextureManager& textures,
     const sf::Font& font,
     const Button& flip_button,
+    const Button& auto_flip_button,
     const Button& copy_fen_button,
     const Button& load_fen_button,
     const TextBox& fen_box
@@ -119,6 +120,7 @@ void Renderer::draw(
         gui,
         font,
         flip_button,
+        auto_flip_button,
         copy_fen_button,
         load_fen_button,
         fen_box
@@ -351,6 +353,7 @@ void Renderer::draw_side_panel(
     const GuiState& gui,
     const sf::Font& font,
     const Button& flip_button,
+    const Button& auto_flip_button,
     const Button& copy_fen_button,
     const Button& load_fen_button,
     const TextBox& fen_box
@@ -359,22 +362,25 @@ void Renderer::draw_side_panel(
     (void)gui;
 
     draw_button(window, flip_button, font);
+    Button auto_flip_display = auto_flip_button;
+    auto_flip_display.label = gui.flip_every_turn ? "Flip Every Turn: On" : "Flip Every Turn: Off";
+    draw_button(window, auto_flip_display, font);
     draw_button(window, copy_fen_button, font);
     draw_button(window, load_fen_button, font);
     draw_textbox(window, fen_box, font);
 
     sf::Text status_label(font, "Status", 18);
-    status_label.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 270.f));
+    status_label.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 326.f));
     status_label.setFillColor(sf::Color::White);
     window.draw(status_label);
 
     sf::Text status_text(font, game.get_status_text(), 18);
-    status_text.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 296.f));
+    status_text.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 352.f));
     status_text.setFillColor(sf::Color(220, 220, 220));
     window.draw(status_text);
 
     sf::Text fen_label(font, "FEN", 18);
-    fen_label.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 124.f));
+    fen_label.setPosition(sf::Vector2f(static_cast<float>(PANEL_LEFT), 180.f));
     fen_label.setFillColor(sf::Color::White);
     window.draw(fen_label);
 }

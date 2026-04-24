@@ -28,6 +28,7 @@ struct GuiState
     // Board state
     // -------------------------
     bool board_flipped = false;
+    bool flip_every_turn = false;
 
     // -------------------------
     // Illegal moves

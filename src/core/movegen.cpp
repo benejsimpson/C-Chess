@@ -355,7 +355,6 @@ static void generate_king_moves(const Board &board, vector<Move> &moves, int squ
     int start_file = index_to_file(square);
     int start_rank = index_to_rank(square);
 
-
     for (int i = 0; i < 8; i++)
     {
         int tar_file = start_file + KING_MOVES[i][0];
@@ -381,13 +380,13 @@ static void generate_king_moves(const Board &board, vector<Move> &moves, int squ
     }
 
     // CASTLING
-    if (king_can_castle_kingside(board,white))
+    if (king_can_castle_kingside(board, white))
         moves.push_back(
-                    create_move(square, white ? 6 : 62, king, Empty, KING_CASTLE));
+            create_move(square, white ? 6 : 62, king, Empty, KING_CASTLE));
 
-    if (king_can_castle_queenside(board,white))
+    if (king_can_castle_queenside(board, white))
         moves.push_back(
-                    create_move(square, white ? 2 : 58, king, Empty, QUEEN_CASTLE));
+            create_move(square, white ? 2 : 58, king, Empty, QUEEN_CASTLE));
 }
 
 int find_king_square(const Board &board, bool white_king)
@@ -605,11 +604,11 @@ bool is_square_attacked(const Board &board, int square, bool by_white)
     return false;
 }
 
-std::vector<Move> generate_legal_moves_for_square(const Board& board, int square)
+std::vector<Move> generate_legal_moves_for_square(const Board &board, int square)
 {
     std::vector<Move> moves;
 
-    for (const Move& move : generate_legal_moves(board))
+    for (const Move &move : generate_legal_moves(board))
     {
         if (move.from == square)
         {
@@ -620,7 +619,7 @@ std::vector<Move> generate_legal_moves_for_square(const Board& board, int square
     return moves;
 }
 
-bool same_move(const Move& a, const Move& b)
+bool same_move(const Move &a, const Move &b)
 {
     return a.from == b.from &&
            a.to == b.to &&
@@ -643,7 +642,7 @@ bool king_can_castle_kingside(const Board &board, bool white)
             ? !board.bitboards[piece_to_bb_ind(WK)][4]
             : !board.bitboards[piece_to_bb_ind(BK)][60])
         return false;
-    
+
     if ( // kingside rook not on starting square -> false
          // rook move should update board.X_king_side anyway so just a safety measure
         white
@@ -653,9 +652,8 @@ bool king_can_castle_kingside(const Board &board, bool white)
 
     int squares_between_king_and_rook[2] = {
         white ? 5 : 61,
-        white ? 6 : 62
-    };
-    
+        white ? 6 : 62};
+
     for (int sq : squares_between_king_and_rook)
     {
         // squares between king and rook are not clear -> false
@@ -663,12 +661,12 @@ bool king_can_castle_kingside(const Board &board, bool white)
             return false;
 
         // king castling through check -> false
-        if (is_square_attacked(board,sq,!white))
+        if (is_square_attacked(board, sq, !white))
             return false;
     }
 
     // currently in check -> false
-    if (is_in_check(board,white))
+    if (is_in_check(board, white))
         return false;
 
     return true;
@@ -687,7 +685,7 @@ bool king_can_castle_queenside(const Board &board, bool white)
             ? !board.bitboards[piece_to_bb_ind(WK)][4]
             : !board.bitboards[piece_to_bb_ind(BK)][60])
         return false;
-    
+
     if ( // queenside rook not on starting square -> false
          // rook move should update board.X_king_side anyway so just a safety measure
         white
@@ -696,12 +694,11 @@ bool king_can_castle_queenside(const Board &board, bool white)
         return false;
 
     int squares_between_king_and_rook[3] =
-    {
-        white ? 1 : 57,
-        white ? 2 : 58, 
-        white ? 3 : 59
-    };
-    
+        {
+            white ? 1 : 57,
+            white ? 2 : 58,
+            white ? 3 : 59};
+
     for (int sq : squares_between_king_and_rook)
     {
         // squares between king and rook are not clear -> false
@@ -711,13 +708,13 @@ bool king_can_castle_queenside(const Board &board, bool white)
         // king castling through check -> false
         if (sq != 1 && sq != 57) // for queenside, ignore b1/b8
         {
-            if (is_square_attacked(board,sq,!white))
+            if (is_square_attacked(board, sq, !white))
                 return false;
         }
     }
 
     // currently in check -> false
-    if (is_in_check(board,white))
+    if (is_in_check(board, white))
         return false;
 
     return true;
