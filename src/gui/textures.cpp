@@ -1,5 +1,8 @@
 #include "gui/textures.hpp"
 
+#include <array>
+#include <string>
+
 bool TextureManager::load_piece_textures()
 {
     struct Entry
@@ -33,6 +36,44 @@ bool TextureManager::load_piece_textures()
     return true;
 }
 
+bool TextureManager::load_widget_textures()
+{
+    struct Entry
+    {
+        WidgetTextureId id;
+        const char* stem;
+    };
+
+    const std::array<Entry, 2> entries = {{
+        {WidgetTextureId::FlipBoard, "assets/widgets/flip_board"},
+        {WidgetTextureId::FlipBoardAuto, "assets/widgets/flip_board_auto"}
+    }};
+
+    const std::array<const char*, 5> extensions = {{
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".bmp",
+        ".tga"
+    }};
+
+    for (const Entry& entry : entries)
+    {
+        const int index = static_cast<int>(entry.id);
+
+        for (const char* extension : extensions)
+        {
+            if (widget_textures[index].loadFromFile(std::string(entry.stem) + extension))
+            {
+                widget_texture_loaded[index] = true;
+                break;
+            }
+        }
+    }
+
+    return true;
+}
+
 
 // returns the texture for a given piece
 const sf::Texture& TextureManager::get_piece_texture(Piece piece) const
@@ -42,4 +83,10 @@ const sf::Texture& TextureManager::get_piece_texture(Piece piece) const
 
     // Return the corresponding texture
     return piece_textures[index];
+}
+
+const sf::Texture* TextureManager::get_widget_texture(WidgetTextureId id) const
+{
+    const int index = static_cast<int>(id);
+    return widget_texture_loaded[index] ? &widget_textures[index] : nullptr;
 }

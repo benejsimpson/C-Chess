@@ -6,7 +6,10 @@ struct Button
 {
     sf::FloatRect bounds;
     std::string label;
+    std::string tooltip;
+    const sf::Texture* icon_texture = nullptr;
     bool hovered = false;
+    bool active = false;
 };
 
 struct TextBox

@@ -45,5 +45,5 @@ private:
     void draw_promotion_popup(sf::RenderWindow& window, const GuiState& gui, const TextureManager& textures);
     void draw_illegal_flash(sf::RenderWindow& window, const GuiState& gui);
 
-    sf::Vector2f square_to_screen(int square, bool board_flipped) const;
+    sf::Vector2f square_to_screen(int square, bool board_flipped, float square_size) const;
 };

@@ -22,9 +22,10 @@ void clear_selection(GuiState& gui)
     gui.dragged_piece = Empty;
 }
 
-sf::FloatRect promotion_popup_bounds(const GuiState& gui)
+sf::FloatRect promotion_popup_bounds(const GuiState& gui, sf::Vector2u window_size)
 {
-    const float square_size = static_cast<float>(SQUARE_SIZE);
+    const LayoutMetrics layout = compute_layout(window_size);
+    const float square_size = layout.square_size;
     const float popup_width = square_size * 4.f;
     const float popup_height = square_size;
 
@@ -33,15 +34,15 @@ sf::FloatRect promotion_popup_bounds(const GuiState& gui)
     int draw_file = gui.board_flipped ? 7 - file : file;
     int draw_rank = gui.board_flipped ? rank : 7 - rank;
 
-    float x = static_cast<float>(BOARD_LEFT) + square_size * static_cast<float>(draw_file) - square_size * 1.5f;
-    float y = static_cast<float>(BOARD_TOP) + square_size * static_cast<float>(draw_rank);
+    float x = layout.board_left + square_size * static_cast<float>(draw_file) - square_size * 1.5f;
+    float y = layout.board_top + square_size * static_cast<float>(draw_rank);
 
-    if (x < static_cast<float>(BOARD_LEFT))
-        x = static_cast<float>(BOARD_LEFT);
-    if (x + popup_width > static_cast<float>(BOARD_LEFT + BOARD_SIZE_PX))
-        x = static_cast<float>(BOARD_LEFT + BOARD_SIZE_PX) - popup_width;
-    if (y + popup_height > static_cast<float>(BOARD_TOP + BOARD_SIZE_PX))
-        y = static_cast<float>(BOARD_TOP + BOARD_SIZE_PX) - popup_height;
+    if (x < layout.board_left)
+        x = layout.board_left;
+    if (x + popup_width > layout.board_left + layout.board_size)
+        x = layout.board_left + layout.board_size - popup_width;
+    if (y + popup_height > layout.board_top + layout.board_size)
+        y = layout.board_top + layout.board_size - popup_height;
 
     return sf::FloatRect({x, y}, {popup_width, popup_height});
 }
@@ -104,7 +105,11 @@ void InputHandler::handle_event(
 
     if (const auto* mouse = event.getIf<sf::Event::MouseMoved>())
     {
-        handle_mouse_move(sf::Vector2f(static_cast<float>(mouse->position.x), static_cast<float>(mouse->position.y)), gui);
+        handle_mouse_move(
+            sf::Vector2f(static_cast<float>(mouse->position.x), static_cast<float>(mouse->position.y)),
+            window.getSize(),
+            gui
+        );
     }
     else if (const auto* press = event.getIf<sf::Event::MouseButtonPressed>())
     {
@@ -112,6 +117,7 @@ void InputHandler::handle_event(
         {
             handle_mouse_press(
                 sf::Vector2f(static_cast<float>(press->position.x), static_cast<float>(press->position.y)),
+                window,
                 game,
                 gui,
                 flip_button,
@@ -128,6 +134,7 @@ void InputHandler::handle_event(
         {
             handle_mouse_release(
                 sf::Vector2f(static_cast<float>(release->position.x), static_cast<float>(release->position.y)),
+                window,
                 game,
                 gui
             );
@@ -155,6 +162,7 @@ void InputHandler::update(Game& game, GuiState& gui, float dt)
 
 void InputHandler::handle_mouse_press(
     sf::Vector2f mouse_pos,
+    sf::RenderWindow& window,
     Game& game,
     GuiState& gui,
     Button& flip_button,
@@ -164,9 +172,9 @@ void InputHandler::handle_mouse_press(
     TextBox& fen_box
 )
 {
-    handle_mouse_move(mouse_pos, gui);
+    handle_mouse_move(mouse_pos, window.getSize(), gui);
 
-    if (gui.show_promotion_popup && handle_promotion_popup_click(mouse_pos, game, gui))
+    if (gui.show_promotion_popup && handle_promotion_popup_click(mouse_pos, window, game, gui))
         return;
 
     fen_box.active = is_mouse_over_textbox(fen_box, mouse_pos);
@@ -216,7 +224,7 @@ void InputHandler::handle_mouse_press(
         return;
     }
 
-    const int square = mouse_to_square(mouse_pos, gui.board_flipped);
+    const int square = mouse_to_square(mouse_pos, window.getSize(), gui.board_flipped);
     if (square == -1)
     {
         clear_selection(gui);
@@ -249,13 +257,13 @@ void InputHandler::handle_mouse_press(
     }
 }
 
-void InputHandler::handle_mouse_release(sf::Vector2f mouse_pos, Game& game, GuiState& gui)
+void InputHandler::handle_mouse_release(sf::Vector2f mouse_pos, sf::RenderWindow& window, Game& game, GuiState& gui)
 {
     if (!gui.dragging)
         return;
 
     gui.dragging = false;
-    const int target_square = mouse_to_square(mouse_pos, gui.board_flipped);
+    const int target_square = mouse_to_square(mouse_pos, window.getSize(), gui.board_flipped);
 
     if (target_square == -1)
     {
@@ -267,11 +275,11 @@ void InputHandler::handle_mouse_release(sf::Vector2f mouse_pos, Game& game, GuiS
     try_drop_move(game, gui, target_square);
 }
 
-void InputHandler::handle_mouse_move(sf::Vector2f mouse_pos, GuiState& gui)
+void InputHandler::handle_mouse_move(sf::Vector2f mouse_pos, sf::Vector2u window_size, GuiState& gui)
 {
     gui.drag_mouse_x = mouse_pos.x;
     gui.drag_mouse_y = mouse_pos.y;
-    gui.drag_hover_square = mouse_to_square(mouse_pos, gui.board_flipped);
+    gui.drag_hover_square = mouse_to_square(mouse_pos, window_size, gui.board_flipped);
 }
 
 void InputHandler::handle_text_input(const sf::Event& event, GuiState& gui, TextBox& fen_box)
@@ -313,19 +321,19 @@ void InputHandler::handle_text_input(const sf::Event& event, GuiState& gui, Text
     }
 }
 
-bool InputHandler::handle_promotion_popup_click(sf::Vector2f mouse_pos, Game& game, GuiState& gui)
+bool InputHandler::handle_promotion_popup_click(sf::Vector2f mouse_pos, sf::RenderWindow& window, Game& game, GuiState& gui)
 {
     if (!gui.show_promotion_popup)
         return false;
 
-    const sf::FloatRect popup = promotion_popup_bounds(gui);
+    const sf::FloatRect popup = promotion_popup_bounds(gui, window.getSize());
     if (!popup.contains(mouse_pos))
     {
         gui.show_promotion_popup = false;
         return true;
     }
 
-    const float square_size = static_cast<float>(SQUARE_SIZE);
+    const float square_size = popup.size.x / 4.f;
     int index = static_cast<int>((mouse_pos.x - popup.position.x) / square_size);
     if (index < 0 || index > 3)
         return true;
@@ -342,16 +350,18 @@ bool InputHandler::handle_promotion_popup_click(sf::Vector2f mouse_pos, Game& ga
     return true;
 }
 
-int InputHandler::mouse_to_square(sf::Vector2f mouse_pos, bool board_flipped) const
+int InputHandler::mouse_to_square(sf::Vector2f mouse_pos, sf::Vector2u window_size, bool board_flipped) const
 {
-    if (mouse_pos.x < BOARD_LEFT || mouse_pos.y < BOARD_TOP)
+    const LayoutMetrics layout = compute_layout(window_size);
+
+    if (mouse_pos.x < layout.board_left || mouse_pos.y < layout.board_top)
         return -1;
 
-    if (mouse_pos.x >= BOARD_LEFT + BOARD_SIZE_PX || mouse_pos.y >= BOARD_TOP + BOARD_SIZE_PX)
+    if (mouse_pos.x >= layout.board_left + layout.board_size || mouse_pos.y >= layout.board_top + layout.board_size)
         return -1;
 
-    const int draw_file = static_cast<int>((mouse_pos.x - static_cast<float>(BOARD_LEFT)) / static_cast<float>(SQUARE_SIZE));
-    const int draw_rank = static_cast<int>((mouse_pos.y - static_cast<float>(BOARD_TOP)) / static_cast<float>(SQUARE_SIZE));
+    const int draw_file = static_cast<int>((mouse_pos.x - layout.board_left) / layout.square_size);
+    const int draw_rank = static_cast<int>((mouse_pos.y - layout.board_top) / layout.square_size);
 
     const int file = board_flipped ? 7 - draw_file : draw_file;
     const int rank = board_flipped ? draw_rank : 7 - draw_rank;
