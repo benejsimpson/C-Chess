@@ -5,7 +5,7 @@
 class TextureManager
 {
 private:
-    sf::Texture piece_textures[12]; // indexed using piece_to_bitboard_index
+    sf::Texture piece_textures[12]; // indexed using piece_to_bb_ind
 
 public:
     bool load_piece_textures();

@@ -24,7 +24,6 @@ const int KNIGHT_MOVES[8][2] = {{1, 2}, {1, -2}, {-1, 2}, {-1, -2}, {2, 1}, {2, 
 const int KING_MOVES[8][2] = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 const int DIAGONAL_MOVES[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
-// TO DO: return true if the side to move is currently in check
 bool is_in_check(const Board &board, bool white_king);
 bool is_square_attacked(const Board &board, int square, bool by_white);
 // finds king square for white[true] or black [false]
@@ -350,10 +349,12 @@ static void generate_queen_moves(const Board &board, vector<Move> &moves, int sq
 
 static void generate_king_moves(const Board &board, vector<Move> &moves, int square)
 {
+    Piece king = board.squares[square];
+
+    bool white = is_white(king);
     int start_file = index_to_file(square);
     int start_rank = index_to_rank(square);
 
-    Piece king = board.squares[square];
 
     for (int i = 0; i < 8; i++)
     {
@@ -379,7 +380,14 @@ static void generate_king_moves(const Board &board, vector<Move> &moves, int squ
         }
     }
 
-    // TO DO: castling
+    // CASTLING
+    if (king_can_castle_kingside(board,white))
+        moves.push_back(
+                    create_move(square, white ? 6 : 62, king, Empty, KING_CASTLE));
+
+    if (king_can_castle_queenside(board,white))
+        moves.push_back(
+                    create_move(square, white ? 2 : 58, king, Empty, QUEEN_CASTLE));
 }
 
 int find_king_square(const Board &board, bool white_king)
@@ -620,4 +628,97 @@ bool same_move(const Move& a, const Move& b)
            a.captured == b.captured &&
            a.flag == b.flag &&
            a.promotion == b.promotion;
+}
+
+bool king_can_castle_kingside(const Board &board, bool white)
+{
+    if ( // FEN has no kingside castling rights -> false
+        white
+            ? !board.white_king_side
+            : !board.black_king_side)
+        return false;
+
+    if ( // king is not on start square -> false
+        white
+            ? !board.bitboards[piece_to_bb_ind(WK)][4]
+            : !board.bitboards[piece_to_bb_ind(BK)][60])
+        return false;
+    
+    if ( // kingside rook not on starting square -> false
+         // rook move should update board.X_king_side anyway so just a safety measure
+        white
+            ? !board.bitboards[piece_to_bb_ind(WR)][7]
+            : !board.bitboards[piece_to_bb_ind(BR)][63])
+        return false;
+
+    int squares_between_king_and_rook[2] = {
+        white ? 5 : 61,
+        white ? 6 : 62
+    };
+    
+    for (int sq : squares_between_king_and_rook)
+    {
+        // squares between king and rook are not clear -> false
+        if (board.squares[sq] != Empty)
+            return false;
+
+        // king castling through check -> false
+        if (is_square_attacked(board,sq,!white))
+            return false;
+    }
+
+    // currently in check -> false
+    if (is_in_check(board,white))
+        return false;
+
+    return true;
+}
+
+bool king_can_castle_queenside(const Board &board, bool white)
+{
+    if ( // FEN has no queenside castling rights -> false
+        white
+            ? !board.white_queen_side
+            : !board.black_queen_side)
+        return false;
+
+    if ( // king is not on start square -> false
+        white
+            ? !board.bitboards[piece_to_bb_ind(WK)][4]
+            : !board.bitboards[piece_to_bb_ind(BK)][60])
+        return false;
+    
+    if ( // queenside rook not on starting square -> false
+         // rook move should update board.X_king_side anyway so just a safety measure
+        white
+            ? !board.bitboards[piece_to_bb_ind(WR)][0]
+            : !board.bitboards[piece_to_bb_ind(BR)][56])
+        return false;
+
+    int squares_between_king_and_rook[3] =
+    {
+        white ? 1 : 57,
+        white ? 2 : 58, 
+        white ? 3 : 59
+    };
+    
+    for (int sq : squares_between_king_and_rook)
+    {
+        // squares between king and rook are not clear -> false
+        if (board.squares[sq] != Empty)
+            return false;
+
+        // king castling through check -> false
+        if (sq != 1 && sq != 57) // for queenside, ignore b1/b8
+        {
+            if (is_square_attacked(board,sq,!white))
+                return false;
+        }
+    }
+
+    // currently in check -> false
+    if (is_in_check(board,white))
+        return false;
+
+    return true;
 }

@@ -25,7 +25,7 @@ bool TextureManager::load_piece_textures()
 
     for (const auto& e : entries)
     {
-        const int index = piece_to_bitboard_index(e.piece);
+        const int index = piece_to_bb_ind(e.piece);
         if (index < 0 || !piece_textures[index].loadFromFile(e.file))
             return false;
     }
@@ -38,7 +38,7 @@ bool TextureManager::load_piece_textures()
 const sf::Texture& TextureManager::get_piece_texture(Piece piece) const
 {
     // Convert piece to index (0–11)
-    int index = piece_to_bitboard_index(piece);
+    int index = piece_to_bb_ind(piece);
 
     // Return the corresponding texture
     return piece_textures[index];

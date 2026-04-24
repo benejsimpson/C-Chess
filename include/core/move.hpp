@@ -60,6 +60,18 @@ inline Move create_move(int from, int to, Piece piece, Piece captured)
     };
 }
 
+inline Move create_move(int from, int to, Piece piece, Piece captured, MoveFlag flag, Piece promotion = Empty)
+{
+    return Move{
+        from,
+        to,
+        piece,
+        captured,
+        flag,
+        promotion
+    };
+}
+
 void apply_move(Board &board, const Move &move);
 
 // check if move is capture
