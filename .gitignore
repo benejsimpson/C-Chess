@@ -1,0 +1,10 @@
+# Output exe
+output/
+*.exe
+*.dll
+
+# Test files
+src/core/test.cpp
+
+# VS Code
+.vscode/
