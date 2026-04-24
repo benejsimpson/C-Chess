@@ -522,11 +522,6 @@ void Renderer::draw_side_panel(
     const unsigned int label_size = static_cast<unsigned int>(std::clamp(layout.board_size * 0.025f, 17.f, 24.f));
     const unsigned int body_size = static_cast<unsigned int>(std::clamp(layout.board_size * 0.024f, 16.f, 22.f));
 
-    sf::Text fen_label(font, "FEN Input", label_size);
-    fen_label.setPosition(sf::Vector2f(layout.panel_left, fen_box.bounds.position.y - label_size - 8.f));
-    fen_label.setFillColor(sf::Color::White);
-    window.draw(fen_label);
-
     sf::Text status_label(font, "Status", label_size);
     status_label.setPosition(sf::Vector2f(layout.panel_left, load_fen_button.bounds.position.y + load_fen_button.bounds.size.y + section_gap));
     status_label.setFillColor(sf::Color::White);
