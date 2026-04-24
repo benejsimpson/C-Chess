@@ -3,7 +3,6 @@
 
 void apply_move(Board &board, const Move &move)
 {
-    // Promotion is special because the pawn changes into a new piece
     if (is_promotion(move) && move.promotion != Empty)
     {
         // remove pawn from square
@@ -20,7 +19,7 @@ void apply_move(Board &board, const Move &move)
     }
     else
     {
-        // normal move or normal capture
+        // normal move or capture
         move_piece(board, move.from, move.to);
     }
 

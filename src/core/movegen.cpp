@@ -7,8 +7,7 @@
 using namespace std;
 
 // --------------------------------------------------
-// Internal helper declarations
-// These are only used inside this file
+// Internal helpers
 // --------------------------------------------------
 
 static void generate_pawn_moves(const Board &board, vector<Move> &moves, int square);
@@ -17,7 +16,6 @@ static void generate_bishop_moves(const Board &board, vector<Move> &moves, int s
 static void generate_rook_moves(const Board &board, vector<Move> &moves, int square);
 static void generate_queen_moves(const Board &board, vector<Move> &moves, int square);
 static void generate_king_moves(const Board &board, vector<Move> &moves, int square);
-
 static bool is_legal_position_after_move(const Board &board, const Move &move);
 
 const int KNIGHT_MOVES[8][2] = {{1, 2}, {1, -2}, {-1, 2}, {-1, -2}, {2, 1}, {2, -1}, {-2, 1}, {-2, -1}};
@@ -170,7 +168,18 @@ static void generate_pawn_moves(const Board &board, vector<Move> &moves, int squ
             continue;
 
         target_p = board.squares[target + lr];
-        if (!is_empty_p(target_p) && is_opponent(pawn, target_p))
+        
+        if (target+lr == board.en_passant_square)
+        {
+            Piece en_passant_pawn = board.squares[target + lr + (white ? -8 : 8)];
+            moves.push_back(Move{square, target + lr, pawn, en_passant_pawn, EN_PASSANT});
+        }
+
+        if (is_empty_p(target_p))
+            continue;
+
+
+        if (is_opponent(pawn, target_p))
         {
             if (index_to_rank(target + lr) == promotion_rank)
             {
@@ -719,3 +728,4 @@ bool king_can_castle_queenside(const Board &board, bool white)
 
     return true;
 }
+
