@@ -11,13 +11,17 @@ void load_fen(Board &board, const std::string &fen)
     std::string placement = "";
     std::string active_colour = "w";
     std::string castling = "-";
+    std::string en_passant = "-";
 
     // split FEN into parts
     // 1 : piece placement
     // 2 : side to move
     // 3 : castling rights
+    // 4 : en passant
     std::size_t first_space = fen.find(' ');
     std::size_t second_space = std::string::npos;
+    std::size_t third_space = std::string::npos;
+    std::size_t fourth_space = std::string::npos;
 
     if (first_space == std::string::npos)
     {
@@ -33,8 +37,7 @@ void load_fen(Board &board, const std::string &fen)
             first_space + 1,
             second_space == std::string::npos
                 ? std::string::npos
-                : second_space - first_space - 1
-        );
+                : second_space - first_space - 1);
 
         if (second_space != std::string::npos)
         {
@@ -44,8 +47,18 @@ void load_fen(Board &board, const std::string &fen)
                 second_space + 1,
                 third_space == std::string::npos
                     ? std::string::npos
-                    : third_space - second_space - 1
-            );
+                    : third_space - second_space - 1);
+        }
+
+        if (third_space != std::string::npos)
+        {
+            fourth_space = fen.find(' ', third_space + 1);
+
+            en_passant = fen.substr(
+                third_space + 1,
+                fourth_space == std::string::npos
+                    ? std::string::npos
+                    : fourth_space - third_space - 1);
         }
     }
 
@@ -103,9 +116,16 @@ void load_fen(Board &board, const std::string &fen)
                 board.black_queen_side = true;
         }
     }
+    // en passant target square
+    board.en_passant_square = -1;
+
+    if (en_passant != "-")
+    {
+        board.en_passant_square = name_to_square(en_passant);
+    }
 }
 
-std::string export_fen(const Board& board)
+std::string export_fen(const Board &board)
 {
     std::string fen;
 
@@ -163,6 +183,14 @@ std::string export_fen(const Board& board)
         castling = "-";
 
     fen += castling;
+
+    // en passant target square
+    fen += " ";
+
+    if (board.en_passant_square == -1)
+        fen += "-";
+    else
+        fen += square_to_name(board.en_passant_square);
 
     return fen;
 }

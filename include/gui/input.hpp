@@ -24,6 +24,7 @@ public:
 private:
     void handle_mouse_press(
         sf::Vector2f mouse_pos,
+        sf::RenderWindow& window,
         Game& game,
         GuiState& gui,
         Button& flip_button,
@@ -33,13 +34,13 @@ private:
         TextBox& fen_box
     );
 
-    void handle_mouse_release(sf::Vector2f mouse_pos, Game& game, GuiState& gui);
-    void handle_mouse_move(sf::Vector2f mouse_pos, GuiState& gui);
+    void handle_mouse_release(sf::Vector2f mouse_pos, sf::RenderWindow& window, Game& game, GuiState& gui);
+    void handle_mouse_move(sf::Vector2f mouse_pos, sf::Vector2u window_size, GuiState& gui);
     void handle_text_input(const sf::Event& event, GuiState& gui, TextBox& fen_box);
 
-    bool handle_promotion_popup_click(sf::Vector2f mouse_pos, Game& game, GuiState& gui);
+    bool handle_promotion_popup_click(sf::Vector2f mouse_pos, sf::RenderWindow& window, Game& game, GuiState& gui);
 
-    int mouse_to_square(sf::Vector2f mouse_pos, bool board_flipped) const;
+    int mouse_to_square(sf::Vector2f mouse_pos, sf::Vector2u window_size, bool board_flipped) const;
 
     void select_square(Game& game, GuiState& gui, int square);
     void try_click_move(Game& game, GuiState& gui, int target_square);

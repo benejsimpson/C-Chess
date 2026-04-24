@@ -34,4 +34,5 @@ public:
 
 private:
     void setup_widgets();
+    void update_layout();
 };
