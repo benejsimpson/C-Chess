@@ -1,8 +1,5 @@
 # TO DO:
 
-_msys_: g++ src/app/main.cpp -o output/app.exe -Iinclude -I/ucrt64/include -L/ucrt64/lib -lsfml-main -lsfml-graphics -lsfml-window -lsfml-system
-./output/app.exe
-
 ## Castling - DONE
 add legal castling moves in `src/core/movegen.cpp`
 
@@ -18,10 +15,10 @@ Need to check:
 ## FEN updates for castling - DONE
 update `src/core/fen.cpp`to preserve castling rights
 
-## En passant
+## En passant - DONE
 update `src/core/movegen.cpp` to generate en-passant and validate legality
 
-## FEN updates for en passant
+## FEN updates for en passant - DONE
 update `src/core/fen.cpp` to support en-passant
 
 ## Start using Bitboards more!

@@ -5,7 +5,7 @@
         - castling rights
         - en passant
         - clocks?
-    
+
     Helper Functions
         - clear board
         - reset board
@@ -21,7 +21,7 @@
 #include "utils.h"
 
 constexpr uint8_t COLOUR_MASK = 0b11000;
-constexpr uint8_t TYPE_MASK   = 0b00111;
+constexpr uint8_t TYPE_MASK = 0b00111;
 
 // -------------------------
 // Piece definitions
@@ -37,13 +37,12 @@ enum Piece : uint8_t
     WHITE = 0b01000,
     BLACK = 0b10000,
 
-    PAWN   = 0b00001,
+    PAWN = 0b00001,
     KNIGHT = 0b00010,
     BISHOP = 0b00011,
-    ROOK   = 0b00100,
-    QUEEN  = 0b00101,
-    KING   = 0b00110,
-
+    ROOK = 0b00100,
+    QUEEN = 0b00101,
+    KING = 0b00110,
 
     WP = WHITE | PAWN,
     WN = WHITE | KNIGHT,
@@ -70,7 +69,7 @@ struct BitBoard
 
     // set bit at position
     // e.g. bb + 12
-    BitBoard& operator+=(int square)
+    BitBoard &operator+=(int square)
     {
         bits |= (1ULL << square);
         return *this;
@@ -78,7 +77,7 @@ struct BitBoard
 
     // unset bit at position
     // e.g. bb - 12
-    BitBoard& operator-=(int square)
+    BitBoard &operator-=(int square)
     {
         bits &= ~(1ULL << square);
         return *this;
@@ -103,7 +102,7 @@ struct BitBoard
 
 struct Board
 {
-    Piece squares[64]; // what is on each square of the board
+    Piece squares[64];      // what is on each square of the board
     BitBoard bitboards[12]; // bitboard for each piece and its positions - oper: +=,-=,[]
 
     bool white_to_move; // who moves next
@@ -113,15 +112,14 @@ struct Board
     // only tells you if castling is ever going to be legal for the remaining game
     bool white_king_side;
     bool white_queen_side;
-    bool black_king_side; 
+    bool black_king_side;
     bool black_queen_side;
 
     // updated to cell index when en-passant available
-    int en_passant_square;   // -1 if none
+    int en_passant_square; // -1 if none
 
-    int fullmove_number;     // starts at 1
+    int fullmove_number; // starts at 1
 };
-
 
 // -------------------------
 // Board setup / utility
@@ -131,12 +129,11 @@ struct Board
 // Reset side to move
 // Clear castling rights
 // Set en-passant square = -1
-void clear_board(Board& board);
+void clear_board(Board &board);
 
 // Call clear_board
 // Call load_start_position
-void reset_board(Board& board);
-
+void reset_board(Board &board);
 
 // -------------------------
 // Square helpers
@@ -149,6 +146,11 @@ void reset_board(Board& board);
 inline constexpr int char_file_to_int(char file)
 {
     return file - 'a';
+}
+
+inline constexpr char int_file_to_char(int file)
+{
+    return 'a' + file;
 }
 
 // converts integer file/rank to board index
@@ -174,6 +176,36 @@ inline constexpr bool is_valid_index(int index)
     return 0 <= index && index < 64;
 }
 
+inline std::string square_to_name(int square)
+{
+    if (!is_valid_index(square))
+        return "-";
+
+    int r = index_to_rank(square);
+    char f = int_file_to_char(index_to_file(square));
+
+    return std::string(1, f) + std::to_string(r + 1);
+}
+
+inline int name_to_square(const std::string& name)
+{
+    if (name.size() != 2)
+        return -1;
+
+    char fc = name[0];
+    char rc = name[1];
+
+    int f = char_file_to_int(fc);
+    int r = rc - '1';
+
+    int sq = file_rank_to_index(f, r);
+
+    if (!is_valid_index(sq))
+        return -1;
+
+    return sq;
+}
+
 // -------------------------
 // BitBoard helpers
 // -------------------------
@@ -185,19 +217,32 @@ inline constexpr int piece_to_bb_ind(Piece piece)
 {
     switch (piece)
     {
-    case WP: return 0;
-    case WN: return 1;
-    case WB: return 2;
-    case WR: return 3;
-    case WQ: return 4;
-    case WK: return 5;
-    case BP: return 6;
-    case BN: return 7;
-    case BB: return 8;
-    case BR: return 9;
-    case BQ: return 10;
-    case BK: return 11;
-    default: return -1;
+    case WP:
+        return 0;
+    case WN:
+        return 1;
+    case WB:
+        return 2;
+    case WR:
+        return 3;
+    case WQ:
+        return 4;
+    case WK:
+        return 5;
+    case BP:
+        return 6;
+    case BN:
+        return 7;
+    case BB:
+        return 8;
+    case BR:
+        return 9;
+    case BQ:
+        return 10;
+    case BK:
+        return 11;
+    default:
+        return -1;
     }
 }
 
@@ -207,7 +252,6 @@ inline constexpr uint64_t square_to_bit(int square)
 {
     return 1ULL << square;
 }
-
 
 // -------------------------
 // Piece helpers
@@ -243,17 +287,16 @@ inline constexpr bool is_empty_p(Piece piece)
     return piece == Empty;
 }
 
-void place_piece(Board& board, int square, Piece piece);
-void remove_piece(Board& board, int square, Piece piece);
-void move_piece(Board& board, int from, int to);
+void place_piece(Board &board, int square, Piece piece);
+void remove_piece(Board &board, int square, Piece piece);
+void move_piece(Board &board, int from, int to);
 
 // -------------------------
 // Position loading
 // -------------------------
 
 // Call a FEN loader with the start FEN
-void load_start_position(Board& board);
-
+void load_start_position(Board &board);
 
 // -------------------------
 // FEN helpers
