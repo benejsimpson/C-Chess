@@ -3,8 +3,14 @@ output/
 *.exe
 *.dll
 
+# Engine testing and version tracker
+src/tests/output/
+*.csv
+*.exe
+
 # Test files
 src/core/test.cpp
+src/tests/main.cpp
 
 # VS Code
 .vscode/
