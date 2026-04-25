@@ -1,4 +1,5 @@
 #include "core/board.hpp"
+#include "core/bitboard.hpp"
 #include "core/fen.hpp"
 #include "core/makemove.hpp"
 #include "core/move.hpp"
@@ -24,6 +25,7 @@
 #include "../gui/renderer.cpp"
 #include "../gui/textures.cpp"
 #include "../gui/gui.cpp"
+#include "../core/bitboard.cpp"
 
 int main()
 {

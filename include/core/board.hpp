@@ -264,6 +264,7 @@ inline constexpr bool is_piece_on_board(const Board &board, Piece piece)
     return board.bitboards[piece_to_bb_ind(piece)] != 0;
 }
 
+
 void place_piece(Board &board, int square, Piece piece);
 void remove_piece(Board &board, int square);
 void move_piece(Board &board, int from, int to);
@@ -271,6 +272,8 @@ void move_piece(Board &board, int from, int to);
 inline BitB white_occupancy(const Board &board);
 inline BitB black_occupancy(const Board &board);
 inline BitB all_occupancy(const Board &board);
+inline BitB diagonal_attackers(const Board &board, bool white);
+inline BitB straight_attackers(const Board &board, bool white);
 inline int king_square(const Board &board, bool white);
 
 // -------------------------

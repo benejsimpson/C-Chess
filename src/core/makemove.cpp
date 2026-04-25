@@ -102,7 +102,7 @@ void apply_move(Board& board, const Move& move)
         else
             captured_square = move.to + 8;
 
-        remove_piece(board, captured_square, captured_piece);
+        remove_piece(board, captured_square);
     }
 
     // king-side castle
@@ -140,15 +140,15 @@ void apply_move(Board& board, const Move& move)
     // promotion without capture
     else if (move.flag == PROMOTION)
     {
-        remove_piece(board, move.from, moved_piece);
+        remove_piece(board, move.from);
         place_piece(board, move.to, move.promotion);
     }
 
     // promotion with capture
     else if (move.flag == PROMO_CAPTURE)
     {
-        remove_piece(board, move.from, moved_piece);
-        remove_piece(board, move.to, captured_piece);
+        remove_piece(board, move.from);
+        remove_piece(board, move.to);
         place_piece(board, move.to, move.promotion);
     }
 
@@ -157,7 +157,7 @@ void apply_move(Board& board, const Move& move)
     {
         if (captured_piece != Empty)
         {
-            remove_piece(board, move.to, captured_piece);
+            remove_piece(board, move.to);
         }
 
         move_piece(board, move.from, move.to);

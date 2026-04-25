@@ -110,24 +110,54 @@ void move_piece(Board &board, int from, int to)
 // Bitboard helpers
 // -------------------------
 
+// returns bb of all squares occupied by white
 inline BitB white_occupancy(const Board &board)
 {
-    return board.bitboards[0] | board.bitboards[1] | board.bitboards[2] |
-    board.bitboards[3] | board.bitboards[4] | board.bitboards[5];
+    return board.bitboards[piece_to_bb_ind(WP)] |
+    board.bitboards[piece_to_bb_ind(WN)] |
+    board.bitboards[piece_to_bb_ind(WB)] |
+    board.bitboards[piece_to_bb_ind(WR)] |
+    board.bitboards[piece_to_bb_ind(WQ)] |
+    board.bitboards[piece_to_bb_ind(WK)];
 }
+
+// returns bb of all squares occupied by black
 inline BitB black_occupancy(const Board &board)
 {
-    return board.bitboards[6] | board.bitboards[7] | board.bitboards[8] |
-    board.bitboards[9] | board.bitboards[10] | board.bitboards[11];
+    return
+    board.bitboards[piece_to_bb_ind(BP)] |
+    board.bitboards[piece_to_bb_ind(BN)] |
+    board.bitboards[piece_to_bb_ind(BB)] |
+    board.bitboards[piece_to_bb_ind(BR)] |
+    board.bitboards[piece_to_bb_ind(BQ)] |
+    board.bitboards[piece_to_bb_ind(BK)];
 }
+
+// returns bb of all squares occupied by either side
 inline BitB all_occupancy(const Board &board)
 {
     return white_occupancy(board) | black_occupancy(board);
 }
+
+// returns int of square king is on
 inline int king_square(const Board& board, bool white)
 {
     const BitB king_bb = board.bitboards[piece_to_bb_ind(white ? WK : BK)];
     return king_bb ? lsb_index(king_bb) : -1;
+}
+
+// returns bb of all squares with white / black queen & bishop
+inline BitB diagonal_attackers(const Board &board, bool white)
+{
+    return board.bitboards[piece_to_bb_ind(white ? WB : BB)] |
+           board.bitboards[piece_to_bb_ind(white ? WQ : BQ)];
+}
+
+// returns bb of all squares with white / black queen & rook
+inline BitB straight_attackers(const Board &board, bool white)
+{
+    return board.bitboards[piece_to_bb_ind(white ? WR : BR)] |
+           board.bitboards[piece_to_bb_ind(white ? WQ : BQ)];
 }
 
 // -------------------------
