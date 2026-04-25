@@ -9,13 +9,13 @@
 // returns a 0ULL with single bit set at square index
 constexpr BitB square_mask(int square)
 {
-    return EMPTY_BB | (1 << square);
+    return (1ULL << square);
 }
     
 // returns true if bit at square index is set
 constexpr bool is_bit_set(BitB bb, int square)
 {
-    return square_mask(square) & bb != 0;
+    return (square_mask(square) & bb) != 0;
 }
 
 // sets the bit at square index
@@ -29,7 +29,7 @@ constexpr void set_bit(BitB& bb, int square)
 // mutates bitboard
 constexpr void clear_bit(BitB& bb, int square)
 {
-    bb ^= square_mask(square);
+    bb &= ~square_mask(square);
 }
 
 

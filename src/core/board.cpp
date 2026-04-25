@@ -27,7 +27,7 @@ void clear_board(Board &board)
     // clear bitboards for each piece
     for (int i = 0; i < 12; i++)
     {
-        board.bitboards[i].clear();
+        board.bitboards[i] = EMPTY_BB;
     }
 
     // reset side to move
@@ -51,36 +51,43 @@ void clear_board(Board &board)
 // -------------------------
 
 // put a piece on a square
-// updates board.squares[] and sets bit in piece's 64-bitboard
+// updates board.squares[] and piece's bitboard
 void place_piece(Board &board, int square, Piece piece)
 {
+    if (!is_valid_index(square) || piece == Empty)
+        return;
+
     board.squares[square] = piece;
 
-    // turn on bit in piece's 64-bitboard
-    int bb_ind = piece_to_bb_ind(piece);
+    // update piece's 64-bitboard
+    const int bb_ind = piece_to_bb_ind(piece);
     if (bb_ind != -1)
     {
-        board.bitboards[bb_ind] += square; // operator += to set bit at index [square]
+        set_bit(board.bitboards[bb_ind], square);
     }
 }
 
 // removes a piece from a square
-// updates board.squares[] and unsets bit in piece's 64-bitboard
-void remove_piece(Board &board, int square, Piece piece)
+// updates board.squares[] and piece's bitboard
+void remove_piece(Board &board, int square)
 {
-    // set board.squares[square] to Empty
+    if (!is_valid_index(square))
+        return;
+
+    const Piece piece = board.squares[square];
+    if (piece == Empty)
+        return;
+
     board.squares[square] = Empty;
 
-    // turn off bit in piece's 64-bitboard
-    int bb_ind = piece_to_bb_ind(piece);
-    if (bb_ind != -1)
-    {
-        board.bitboards[bb_ind] -= square; // operator -= to unset bit at index [square]
-    }
+    // unset bit in piece's bitboard
+    clear_bit(
+        board.bitboards[piece_to_bb_ind(piece)],
+        square);
 }
 
 // removes piece and places it in new position
-// updates board.squares[] and piece's 64-bitboard
+// updates board.squares[] and piece's bitboard
 void move_piece(Board &board, int from, int to)
 {
     // find the piece on the square moving from (the piece being moved)
@@ -90,14 +97,38 @@ void move_piece(Board &board, int from, int to)
     Piece captured = board.squares[to];
     if (!is_empty_p(captured))
     {
-        remove_piece(board, to, captured);
+        remove_piece(board, to);
     }
 
     // remove moving piece from original position and place on new square
-    remove_piece(board, from, piece);
+    remove_piece(board, from);
     place_piece(board, to, piece);
 }
 
+
+// -------------------------
+// Bitboard helpers
+// -------------------------
+
+inline BitB white_occupancy(const Board &board)
+{
+    return board.bitboards[0] | board.bitboards[1] | board.bitboards[2] |
+    board.bitboards[3] | board.bitboards[4] | board.bitboards[5];
+}
+inline BitB black_occupancy(const Board &board)
+{
+    return board.bitboards[6] | board.bitboards[7] | board.bitboards[8] |
+    board.bitboards[9] | board.bitboards[10] | board.bitboards[11];
+}
+inline BitB all_occupancy(const Board &board)
+{
+    return white_occupancy(board) | black_occupancy(board);
+}
+inline int king_square(const Board& board, bool white)
+{
+    const BitB king_bb = board.bitboards[piece_to_bb_ind(white ? WK : BK)];
+    return king_bb ? lsb_index(king_bb) : -1;
+}
 
 // -------------------------
 // Position loading
@@ -105,7 +136,7 @@ void move_piece(Board &board, int from, int to)
 
 void load_start_position(Board &board)
 {
-    load_fen(board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq");
+    load_fen(board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
     board.white_king_side = true;
     board.white_queen_side = true;
     board.black_king_side = true;

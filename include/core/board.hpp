@@ -19,9 +19,12 @@
 
 #pragma once
 #include "utils.h"
+#include "core/bitboard.hpp"
 
 constexpr uint8_t COLOUR_MASK = 0b11000;
 constexpr uint8_t TYPE_MASK = 0b00111;
+constexpr int WHITE_BB_INDS[6] = {0, 1, 2, 3, 4, 5};
+constexpr int BLACK_BB_INDS[6] = {6, 7, 8, 9, 10, 11};
 
 // -------------------------
 // Piece definitions
@@ -63,38 +66,7 @@ enum Piece : uint8_t
 // BitBoards
 // -------------------------
 
-struct BitBoard
-{
-    uint64_t bits = 0;
-
-    // set bit at position
-    // e.g. bb + 12
-    BitBoard &operator+=(int square)
-    {
-        bits |= (1ULL << square);
-        return *this;
-    }
-
-    // unset bit at position
-    // e.g. bb - 12
-    BitBoard &operator-=(int square)
-    {
-        bits &= ~(1ULL << square);
-        return *this;
-    }
-
-    // check if a bit is turned on
-    // e.g. if (bb[12])
-    bool operator[](int square) const
-    {
-        return (bits & (1ULL << square)) != 0;
-    }
-
-    void clear()
-    {
-        bits = 0;
-    }
-};
+using BitBoard = uint64_t;
 
 // -------------------------
 //          Board
@@ -103,7 +75,7 @@ struct BitBoard
 struct Board
 {
     Piece squares[64];      // what is on each square of the board
-    BitBoard bitboards[12]; // bitboard for each piece and its positions - oper: +=,-=,[]
+    BitB bitboards[12]; // bitboard for each piece and its positions
 
     bool white_to_move; // who moves next
 
@@ -252,12 +224,6 @@ inline constexpr int piece_to_bb_ind(Piece piece)
     }
 }
 
-// returns 64-bit ULL with 1 at square index and all other 0s
-// NOTE: check is_valid_index(square) first
-inline constexpr uint64_t square_to_bit(int square)
-{
-    return 1ULL << square;
-}
 
 // -------------------------
 // Piece helpers
@@ -295,12 +261,17 @@ inline constexpr bool is_empty_p(Piece piece)
 
 inline constexpr bool is_piece_on_board(const Board &board, Piece piece)
 {
-    return board.bitboards[piece_to_bb_ind(piece)].bits != 0;
+    return board.bitboards[piece_to_bb_ind(piece)] != 0;
 }
 
 void place_piece(Board &board, int square, Piece piece);
-void remove_piece(Board &board, int square, Piece piece);
+void remove_piece(Board &board, int square);
 void move_piece(Board &board, int from, int to);
+
+inline BitB white_occupancy(const Board &board);
+inline BitB black_occupancy(const Board &board);
+inline BitB all_occupancy(const Board &board);
+inline int king_square(const Board &board, bool white);
 
 // -------------------------
 // Position loading
