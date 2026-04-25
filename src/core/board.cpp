@@ -1,3 +1,5 @@
+// src/core/board.cpp
+
 #include "core/utils.h"
 #include "core/board.hpp"
 #include "core/fen.hpp"
