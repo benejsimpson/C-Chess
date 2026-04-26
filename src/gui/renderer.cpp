@@ -30,9 +30,7 @@ int find_checked_king_square(const Board& board, bool white_king)
 }
 }
 
-// --------------------------------------------------
-// Rendering helpers
-// --------------------------------------------------
+                                                                    // Rendering helpers
 
 std::string wrap_text(const sf::Font& font, const std::string& text, unsigned int character_size, float max_width)
 {
@@ -220,9 +218,7 @@ static void draw_tooltip(
     window.draw(tooltip_text);
 }
 
-// --------------------------------------------------
-// Main draw function
-// --------------------------------------------------
+                                                                    // Main draw function
 
 void Renderer::draw(
     sf::RenderWindow& window,
@@ -234,6 +230,9 @@ void Renderer::draw(
     const Button& auto_flip_button,
     const Button& copy_fen_button,
     const Button& load_fen_button,
+    const Button& two_player_button,
+    const Button& white_ai_button,
+    const Button& black_ai_button,
     const TextBox& fen_box
 )
 {
@@ -255,6 +254,9 @@ void Renderer::draw(
         auto_flip_button,
         copy_fen_button,
         load_fen_button,
+        two_player_button,
+        white_ai_button,
+        black_ai_button,
         fen_box
     );
     draw_promotion_popup(window, gui, textures);
@@ -263,9 +265,7 @@ void Renderer::draw(
     window.display();
 }
 
-// --------------------------------------------------
-// Board drawing
-// --------------------------------------------------
+                                                                    // Board drawing
 
 void Renderer::draw_board(sf::RenderWindow& window, const GuiState& gui)
 {
@@ -396,9 +396,7 @@ void Renderer::draw_check_highlight(sf::RenderWindow& window, const Game& game, 
     window.draw(rect);
 }
 
-// --------------------------------------------------
-// Piece drawing
-// --------------------------------------------------
+                                                                    // Piece drawing
 
 void Renderer::draw_pieces(
     sf::RenderWindow& window,
@@ -480,9 +478,7 @@ void Renderer::draw_dragged_piece(
     window.draw(sprite);
 }
 
-// --------------------------------------------------
-// Side panel
-// --------------------------------------------------
+                                                                    // Side panel
 
 void Renderer::draw_side_panel(
     sf::RenderWindow& window,
@@ -493,6 +489,9 @@ void Renderer::draw_side_panel(
     const Button& auto_flip_button,
     const Button& copy_fen_button,
     const Button& load_fen_button,
+    const Button& two_player_button,
+    const Button& white_ai_button,
+    const Button& black_ai_button,
     const TextBox& fen_box
 )
 {
@@ -517,20 +516,13 @@ void Renderer::draw_side_panel(
     draw_button(window, auto_flip_display, font);
     draw_button(window, copy_fen_display, font);
     draw_button(window, load_fen_display, font);
+    draw_button(window, two_player_button, font);
+    draw_button(window, white_ai_button, font);
+    draw_button(window, black_ai_button, font);
     draw_textbox(window, fen_box, font);
 
     const unsigned int label_size = static_cast<unsigned int>(std::clamp(layout.board_size * 0.025f, 17.f, 24.f));
     const unsigned int body_size = static_cast<unsigned int>(std::clamp(layout.board_size * 0.024f, 16.f, 22.f));
-
-    sf::Text status_label(font, "Status", label_size);
-    status_label.setPosition(sf::Vector2f(layout.panel_left, load_fen_button.bounds.position.y + load_fen_button.bounds.size.y + section_gap));
-    status_label.setFillColor(sf::Color::White);
-    window.draw(status_label);
-
-    sf::Text status_text(font, game.get_status_text(), body_size);
-    status_text.setPosition(sf::Vector2f(layout.panel_left, status_label.getPosition().y + label_size + 8.f));
-    status_text.setFillColor(sf::Color(220, 220, 220));
-    window.draw(status_text);
 
     if (flip_display.hovered)
         draw_tooltip(window, font, flip_display.tooltip, sf::Vector2f(flip_display.bounds.position.x, flip_display.bounds.position.y));
@@ -538,9 +530,7 @@ void Renderer::draw_side_panel(
         draw_tooltip(window, font, auto_flip_display.tooltip, sf::Vector2f(auto_flip_display.bounds.position.x, auto_flip_display.bounds.position.y));
 }
 
-// --------------------------------------------------
-// Promotion popup
-// --------------------------------------------------
+                                                                    // Promotion popup
 
 void Renderer::draw_promotion_popup(
     sf::RenderWindow& window,
@@ -614,9 +604,7 @@ void Renderer::draw_promotion_popup(
     }
 }
 
-// --------------------------------------------------
-// Illegal move flash
-// --------------------------------------------------
+                                                                    // Illegal move flash
 
 void Renderer::draw_illegal_flash(sf::RenderWindow& window, const GuiState& gui)
 {
@@ -638,10 +626,8 @@ void Renderer::draw_illegal_flash(sf::RenderWindow& window, const GuiState& gui)
     window.draw(overlay);
 }
 
-// --------------------------------------------------
 // Square -> screen helper
 // Returns board-relative position
-// --------------------------------------------------
 
 sf::Vector2f Renderer::square_to_screen(int square, bool board_flipped, float square_size) const
 {

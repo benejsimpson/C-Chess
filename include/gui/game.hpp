@@ -31,4 +31,6 @@ public:
 
     bool has_last_move() const;
     Move get_last_move() const;
+
+    bool make_ai_move(int depth);
 };

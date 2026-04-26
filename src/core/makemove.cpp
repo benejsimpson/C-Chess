@@ -1,9 +1,6 @@
 #include "core/makemove.hpp"
 
-// --------------------------------------------------
-// Internal helpers
-// --------------------------------------------------
-
+                                                                    // Internal helpers
 static bool is_rook_start_square(int square, Piece piece)
 {
     if (piece == WR && (square == 0 || square == 7))
@@ -50,9 +47,7 @@ static void remove_castling_rights_for_king(Board& board, Piece king)
     }
 }
 
-// --------------------------------------------------
-// Main move application
-// --------------------------------------------------
+                                                                    // Main move application
 
 void apply_move(Board& board, const Move& move)
 {
@@ -63,9 +58,7 @@ void apply_move(Board& board, const Move& move)
     // allow en-passant only when double pawn move
     board.en_passant_square = -1;
 
-    // ------------------------------------------
     // Update castling rights before moving pieces
-    // ------------------------------------------
 
     // if king moves, that side loses both castling rights
     if (get_piece_type(moved_piece) == KING)
@@ -85,9 +78,7 @@ void apply_move(Board& board, const Move& move)
         remove_castling_rights_for_rook(board, move.to, captured_piece);
     }
 
-    // ------------------------------------------
-    // Handle move by flag
-    // ------------------------------------------
+                                                                    // Handle move by flag
 
     // en passant capture
     if (move.flag == EN_PASSANT)
@@ -102,7 +93,7 @@ void apply_move(Board& board, const Move& move)
         else
             captured_square = move.to + 8;
 
-        remove_piece(board, captured_square, captured_piece);
+        remove_piece(board, captured_square);
     }
 
     // king-side castle
@@ -140,15 +131,15 @@ void apply_move(Board& board, const Move& move)
     // promotion without capture
     else if (move.flag == PROMOTION)
     {
-        remove_piece(board, move.from, moved_piece);
+        remove_piece(board, move.from);
         place_piece(board, move.to, move.promotion);
     }
 
     // promotion with capture
     else if (move.flag == PROMO_CAPTURE)
     {
-        remove_piece(board, move.from, moved_piece);
-        remove_piece(board, move.to, captured_piece);
+        remove_piece(board, move.from);
+        remove_piece(board, move.to);
         place_piece(board, move.to, move.promotion);
     }
 
@@ -157,7 +148,7 @@ void apply_move(Board& board, const Move& move)
     {
         if (captured_piece != Empty)
         {
-            remove_piece(board, move.to, captured_piece);
+            remove_piece(board, move.to);
         }
 
         move_piece(board, move.from, move.to);
