@@ -5,6 +5,18 @@
 
 namespace
 {
+
+bool is_ai_turn(const Game& game, const GuiState& gui)
+{
+    if (gui.game_mode == GameMode::WhiteAI && game.white_to_move())
+        return true;
+
+    if (gui.game_mode == GameMode::BlackAI && !game.white_to_move())
+        return true;
+
+    return false;
+}
+
 const std::array<const char*, 3> kFontCandidates = {
     "assets/DejaVuSans.ttf",
     "C:/Windows/Fonts/segoeui.ttf",
@@ -85,12 +97,22 @@ void ChessGui::run()
                 auto_flip_button,
                 copy_fen_button,
                 load_fen_button,
+                two_player_button,
+                white_ai_button,
+                black_ai_button,
                 fen_box
             );
         }
 
         const float dt = clock.restart().asSeconds();
+
         input.update(game, gui, dt);
+
+        if (!gui.show_promotion_popup && is_ai_turn(game, gui))
+        {
+            game.make_ai_move(gui.search_depth);
+        }
+
         sync_board_orientation(game, gui);
         fen_box.text = gui.fen_input;
 
@@ -104,6 +126,9 @@ void ChessGui::run()
             auto_flip_button,
             copy_fen_button,
             load_fen_button,
+            two_player_button,
+            white_ai_button,
+            black_ai_button,
             fen_box
         );
     }
@@ -116,6 +141,10 @@ void ChessGui::setup_widgets()
 
     auto_flip_button.label = "Auto";
     auto_flip_button.tooltip = "Flip board every turn automatically";
+
+    two_player_button.label = "2 Player";
+    white_ai_button.label = "White AI";
+    black_ai_button.label = "Black AI";
 
     copy_fen_button.label = "Copy FEN";
     load_fen_button.label = "Load FEN";
@@ -158,6 +187,29 @@ void ChessGui::update_layout()
 
     load_fen_button.bounds = sf::FloatRect(
         {layout.panel_left, fen_box.bounds.position.y + fen_box.bounds.size.y + std::max(12.f, layout.padding * 0.8f)},
+        {full_button_width, button_height}
+    );
+
+    const float mode_gap = std::max(12.f, layout.padding * 0.8f);
+
+    float y = load_fen_button.bounds.position.y + button_height + mode_gap;
+
+    two_player_button.bounds = sf::FloatRect(
+        {layout.panel_left, y},
+        {full_button_width, button_height}
+    );
+
+    y += button_height + mode_gap;
+
+    white_ai_button.bounds = sf::FloatRect(
+        {layout.panel_left, y},
+        {full_button_width, button_height}
+    );
+
+    y += button_height + mode_gap;
+
+    black_ai_button.bounds = sf::FloatRect(
+        {layout.panel_left, y},
         {full_button_width, button_height}
     );
 }

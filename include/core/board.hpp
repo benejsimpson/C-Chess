@@ -1,22 +1,3 @@
-/*
-    Board Data
-        - squares
-        - side to move
-        - castling rights
-        - en passant
-        - clocks?
-
-    Helper Functions
-        - clear board
-        - reset board
-        - square index helpers
-        - piece type / colour helpers
-
-    FEN Helpers -> FEN.
-        - piece to char
-        - char to piece
-*/
-
 #pragma once
 #include "utils.h"
 #include "core/bitboard.hpp"
@@ -26,10 +7,7 @@ constexpr uint8_t TYPE_MASK = 0b00111;
 constexpr int WHITE_BB_INDS[6] = {0, 1, 2, 3, 4, 5};
 constexpr int BLACK_BB_INDS[6] = {6, 7, 8, 9, 10, 11};
 
-// -------------------------
-// Piece definitions
-// -------------------------
-
+                                                                    // Piece definitions
 enum Piece : uint8_t
 {
     // pieces represented as integers from binary with 2-bit colour and 3-bit type
@@ -62,22 +40,14 @@ enum Piece : uint8_t
     BK = BLACK | KING
 };
 
-// -------------------------
-// BitBoards
-// -------------------------
-
 using BitBoard = uint64_t;
-
-// -------------------------
-//          Board
-// -------------------------
 
 struct Board
 {
     Piece squares[64];      // what is on each square of the board
-    BitB bitboards[12]; // bitboard for each piece and its positions
+    BitB bitboards[12];     // bitboard for each piece and its positions
 
-    bool white_to_move; // who moves next
+    bool white_to_move;     // who moves next
 
     // castling rights
     // this is for FEN ONLY -> does not tell you if castling is legal for a move
@@ -88,14 +58,12 @@ struct Board
     bool black_queen_side;
 
     // updated to cell index when en-passant available
-    int en_passant_square; // -1 if none
+    int en_passant_square;  // -1 if none
 
-    int fullmove_number; // starts at 1
+    int fullmove_number;    // starts at 1
 };
 
-// -------------------------
-// Board setup / utility
-// -------------------------
+                                                                    // Board setup / utility
 
 // Set all squares to empty
 // Reset side to move
@@ -107,11 +75,9 @@ void clear_board(Board &board);
 // Call load_start_position
 void reset_board(Board &board);
 
-// -------------------------
-// Square helpers
+                                                                    // Square helpers
 // file: 0..7 for a..h
 // rank: 0..7 for ranks 1..8
-// -------------------------
 
 // returns int value of file : a..h -> 0..7
 // must be lowercase from a,b,c,d,e,f,g,h
@@ -184,9 +150,7 @@ inline int name_to_square(const std::string& name)
     return sq;
 }
 
-// -------------------------
-// BitBoard helpers
-// -------------------------
+                                                                    // BitBoard helpers
 
 // converts a Piece into bitboard index
 // W: P=0, N=1, B=2, R=3, Q=4, K=5
@@ -223,11 +187,7 @@ inline constexpr int piece_to_bb_ind(Piece piece)
         return -1;
     }
 }
-
-
-// -------------------------
-// Piece helpers
-// -------------------------
+                                                                    // Piece helpers
 
 // true if piece is a white piece
 inline constexpr bool is_white(Piece piece)
@@ -276,16 +236,12 @@ inline BitB diagonal_attackers(const Board &board, bool white);
 inline BitB straight_attackers(const Board &board, bool white);
 inline int king_square(const Board &board, bool white);
 
-// -------------------------
-// Position loading
-// -------------------------
+                                                                    // Position loading
 
 // Call a FEN loader with the start FEN
 void load_start_position(Board &board);
 
-// -------------------------
 // FEN helpers
-// -------------------------
 
 char piece_to_char(Piece piece);
 

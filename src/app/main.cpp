@@ -12,10 +12,8 @@
 #include "gui/renderer.hpp"
 #include "gui/textures.hpp"
 #include "gui/widgets.hpp"
+#include "engine/ai.hpp"
 
-// Single-translation-unit app entrypoint for the current project state.
-// This lets the game be built from src/app/main.cpp while reusing the
-// existing source layout under src/core and src/gui.
 #include "../core/board.cpp"
 #include "../core/fen.cpp"
 #include "../core/makemove.cpp"
@@ -26,6 +24,9 @@
 #include "../gui/textures.cpp"
 #include "../gui/gui.cpp"
 #include "../core/bitboard.cpp"
+#include "../engine/ai.cpp"
+#include "../engine/evaluate.cpp"
+
 
 int main()
 {

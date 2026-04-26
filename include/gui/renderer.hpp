@@ -20,6 +20,9 @@ public:
         const Button& auto_flip_button,
         const Button& copy_fen_button,
         const Button& load_fen_button,
+        const Button& two_player_button,
+        const Button& white_ai_button,
+        const Button& black_ai_button,
         const TextBox& fen_box
     );
 
@@ -40,6 +43,9 @@ private:
         const Button& auto_flip_button,
         const Button& copy_fen_button,
         const Button& load_fen_button,
+        const Button& two_player_button,
+        const Button& white_ai_button,
+        const Button& black_ai_button,
         const TextBox& fen_box
     );
     void draw_promotion_popup(sf::RenderWindow& window, const GuiState& gui, const TextureManager& textures);

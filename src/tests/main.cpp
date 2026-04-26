@@ -16,13 +16,14 @@
 #include "../engine/evaluate.cpp"
 #include "../engine/perft.cpp"
 #include "../core/bitboard.cpp"
+#include "../tests/version_csv_writer.cpp"
 
 const std::string KIWIPETE = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 
 void print_perft_result(const Board &board, int depth);
 void perft_depth_n_starting_position(int depth);
 void kiwipete_depth_4();
-void eval();
+void eval_to_csv();
 
 
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -31,11 +32,9 @@ void eval();
 
 int main()
 {
-    perft_depth_n_starting_position(6);
+    eval_to_csv();
     return 0;
 }
-
-
 
 
 void print_perft_result(const Board &board, int depth)

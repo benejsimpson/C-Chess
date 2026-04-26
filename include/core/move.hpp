@@ -4,9 +4,7 @@
 #include "utils.h"
 #include "board.hpp"
 
-// ---------------------------------
-// Move flags
-// ---------------------------------
+                                                                    // Move flags
 
 enum MoveFlag : uint8_t
 {
@@ -24,9 +22,7 @@ enum MoveFlag : uint8_t
 };
 
 
-// ---------------------------------
-// Move structure
-// ---------------------------------
+                                                                    // Move structure
 
 struct Move
 {
@@ -43,9 +39,7 @@ struct Move
 };
 
 
-// ---------------------------------
-// Helper functions
-// ---------------------------------
+                                                                    // Helper functions
 
 // create a basic move
 inline Move create_move(int from, int to, Piece piece, Piece captured)
@@ -60,7 +54,13 @@ inline Move create_move(int from, int to, Piece piece, Piece captured)
     };
 }
 
-inline Move create_move(int from, int to, Piece piece, Piece captured, MoveFlag flag, Piece promotion = Empty)
+inline Move create_move(
+    int from,
+    int to,
+    Piece piece,
+    Piece captured,
+    MoveFlag flag,
+    Piece promotion = Empty)
 {
     return Move{
         from,

@@ -62,7 +62,7 @@ void load_fen(Board &board, const std::string &fen)
         }
     }
 
-    // load board pieces
+                                                                        // load board pieces
     int rank = 7;
     int file = 0;
 
@@ -129,7 +129,7 @@ std::string export_fen(const Board &board)
 {
     std::string fen;
 
-    // piece placement
+                                                                        // piece placement
     for (int rank = 7; rank >= 0; rank--)
     {
         int empty_count = 0;

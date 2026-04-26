@@ -2,9 +2,7 @@
 #include <iostream>
 
 
-// ---------------------------
-// basic square masks
-// ---------------------------
+                                                                    // basic square masks
 
 // returns a 0ULL with single bit set at square index
 constexpr BitB square_mask(int square)
@@ -32,10 +30,7 @@ constexpr void clear_bit(BitB& bb, int square)
     bb &= ~square_mask(square);
 }
 
-
-// ---------------------------
-// Counting / scanning
-// ---------------------------
+                                                                    // Counting / scanning
 
 // counts the number of set bits in ULL
 inline int count_bits(BitB bb)
@@ -60,9 +55,7 @@ inline int pop_lsb(BitB& bb)
 }
 
 
-// ---------------------------
-// Board masks
-// ---------------------------
+                                                                    // Board masks
 
 // returns ULL with set bits on rank indexed 0-7
 constexpr BitB rank_mask(const int rank)
@@ -77,9 +70,7 @@ constexpr BitB file_mask(int file)
 }
 
 
-// ---------------------------
-// debug / display helpers
-// ---------------------------
+                                                                    // debug / display helpers
 
 // prints 8x8 chess board representation of bitboard
 // from white pov (a1 bottom left, h8 top right)

@@ -2,6 +2,9 @@
 
 #include "core/board.hpp"
 #include "core/fen.hpp"
+#include "core/move.hpp"
+#include "core/movegen.hpp"
+
 #include <cstdint>
 #include <cmath>
 #include <fstream>
@@ -13,49 +16,92 @@ const int N = 300;
 const int B = 350;
 const int R = 500;
 const int Q = 900;
+const int MATE_SCORE = 100000;
+const int INF = 1000000;
 
-const int W_BB[5] = {0, 1, 2, 3, 4};
-const int B_BB[5] = {6, 7, 8, 9, 10};
+const int W_BB[6] = {0, 1, 2, 3, 4, 5};
+const int B_BB[6] = {6, 7, 8, 9, 10,11};
 
-const int PIECES[5] = {P, N, B, R, Q};
+const int PIECE_MATERIAL_SCORE[5] = {P, N, B, R, Q};
 
-inline int count_set_bits(uint64_t bb)
+inline int evaluate(const Board &board);
+
+Move find_best_move(Board board, int depth);
+
+int minimax(Board board, int depth, int alpha, int beta);
+inline int psqt_score(const Board &board);
+inline int evaluate_material(const Board &board);
+
+
+constexpr int ALL_PSQT[6][64] =
 {
-    return __builtin_popcountll(bb);
-}
-
-inline int evaluate(const Board &board)
-{
-    int eval = 0;
-
-    for (int i = 0; i < 5; i++)
-    {
-        eval +=
-            (count_set_bits(board.bitboards[W_BB[i]]) - count_set_bits(board.bitboards[B_BB[i]])) * PIECES[i];
+    { // PAWNS
+        0,   0,   0,   0,   0,   0,   0,   0,   // 1
+        5,   5,   5, -10, -10,   5,   5,   5,   // 2
+        5,   0,   0,   5,   5,   0,   0,   5,   // 3
+        5,   5,   5,  20,  20,   5,   5,   5,   // 4
+        10, 10,  15,  60,  60,  15,  10,  10,   // 5
+        20, 20,  20,  30,  30,  30,  20,  20,   // 6
+        30, 30,  30,  40,  40,  30,  30,  30,   // 7
+        0,   0,   0,   0,   0,   0,   0,   0    // 8
+    },
+    { // KNIGHTS
+        -5, -10, -5, -5, -5, -5, -10, -5,
+        -5,   0,  0,  5,  5,  0,   0, -5,
+        -5,   5, 10, 10, 10, 10,   5, -5,
+        -5,   5, 10, 15, 15, 10,   5, -5,
+        -5,   5, 10, 15, 15, 10,   5, -5,
+        -5,   5, 10, 10, 10, 10,   5, -5,
+        -5,   0,  0, 10, 10,  0,   0, -5,
+        -5,  -5, -5, -5, -5, -5,  -5, -5
+    },
+    { // BISHOPS
+        0,   0, -10,   0,   0, -10,   0,   0,
+        0,  10,   0,  10,  10,   0,  10,   0,
+        0,  10,   0,  10,  10,   0,  10,   0,
+        5,   0,  10,   0,   0,  10,   0,   5,
+        0,  10,   0,   0,   0,   0,  10,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0
+    },
+    { // ROOKS
+        0,   0,   0,  10,  10,   5,   0,   0,
+        0,   0,   0,  10,  10,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,
+        0,   0,   0,   0,   0,   0,   0,   0,
+        10, 10, 10,  10,  10,  10, 10, 10,
+        10, 10, 10,  10,  10,  10, 10, 10
+    },
+    { // QUEENS
+        -20, -10, -10,  0,  0, -10, -10, -20,
+        -10,   0,   5,  0,  0,   0,   0, -10,
+        -10,   5,   5,  5,  5,   5,   0, -10,
+        -5,    0,   5,  5,  5,   5,   0,  -5,
+        -5,    0,   5,  5,  5,   5,   0,  -5,
+        -10,   0,   5,  5,  5,   5,   0, -10,
+        -10,   0,   0,  0,  0,   0,   0, -10,
+        -20, -10, -10, -5, -5, -10, -10, -20
+    },
+    { // KINGS
+        0, 0, 10, -5, -5, -5, 10, 0,
+        0, 0,  0, -5, -5, -5,  0, 0,
+        0, 0,  0,  0,  0,  0,  0, 0,
+        0, 0,  0,  0,  0,  0,  0, 0,
+        0, 0,  0,  0,  0,  0,  0, 0,
+        0, 0,  0,  0,  0,  0,  0, 0,
+        0, 0,  0,  0,  0,  0,  0, 0,
+        0, 0,  0,  0,  0,  0,  0, 0
     }
-    return eval;
-}
-
-
-
-
-
-
-struct EvalResult
-{
-    std::string fen;
-    std::string stockfish_eval;
-    int eval;
-    int absolute_eval;
 };
 
-std::vector<EvalResult> evaluate_positions_from_csv(
-    const std::string& file_path,
-    const std::string& version);
 
-bool write_eval_results_to_csv(
-    const std::vector<EvalResult>& results,
-    const std::string& file_path,
-    const std::string& version);
+inline int mirror_square(int square)
+{
+    return square ^ 56;
+}
 
-bool evaluate_csv_positions(const std::string& version = "material_v1");
+int search(Board board, int depth);
+

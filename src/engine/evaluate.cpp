@@ -1,180 +1,168 @@
 #include "engine/evaluate.hpp"
-
 #include <cmath>
 
 using namespace std;
 
-namespace
+inline int evaluate(const Board &board)
 {
-    const string FILE_PATH = "src/tests/output/Evals.csv";
+    return evaluate_material(board) + psqt_score(board);
+}
 
-    struct CsvRow
+inline int evaluate_material(const Board &board)
+{
+    int eval = 0;
+
+    for (int i = 0; i < 5; i++)
     {
-        string fen;
-        string stockfish_eval;
-    };
+        eval +=
+            (count_bits(board.bitboards[W_BB[i]]) - count_bits(board.bitboards[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
+    }
+    return eval;
+}
 
-    vector<string> parse_csv_row(const string& line)
+inline int psqt_score(const Board &board)
+{
+    int eval = 0;
+
+    // loop through each piece type
+    for (int i = 0; i < 6; i++)
     {
-        vector<string> fields;
-        string field;
-        bool in_quotes = false;
+        // copy of white piece bitboard
+        BitB w_copy = board.bitboards[WHITE_BB_INDS[i]];
 
-        for (size_t i = 0; i < line.size(); ++i)
+        while (w_copy != 0)
         {
-            const char ch = line[i];
-
-            if (ch == '"')
-            {
-                if (in_quotes && i + 1 < line.size() && line[i + 1] == '"')
-                {
-                    field += '"';
-                    ++i;
-                }
-                else
-                {
-                    in_quotes = !in_quotes;
-                }
-            }
-            else if (ch == ',' && !in_quotes)
-            {
-                fields.push_back(field);
-                field.clear();
-            }
-            else
-            {
-                field += ch;
-            }
+            // add piece square value for piece to eval
+            eval += ALL_PSQT[i][pop_lsb(w_copy)];
         }
 
-        fields.push_back(field);
-        return fields;
+        // copy of black piece bitboard
+        BitB b_copy = board.bitboards[BLACK_BB_INDS[i]];
+        while (b_copy != 0)
+        {
+            // subtract piece square value for piece to eval
+            eval -= ALL_PSQT[i][mirror_square(pop_lsb(b_copy))];
+        }
+    }
+    return eval;
+}
+
+Move find_best_move(Board board, int depth)
+{
+    vector<Move> moves = generate_legal_moves(board);
+
+    Move best_move = moves[0];
+
+    int best_score = board.white_to_move ? -INF : INF;
+
+    for (Move move : moves)
+    {
+        Board copy = board;
+        apply_move(copy, move);
+
+        int score = minimax(copy, depth - 1, -INF, INF);
+
+        if (board.white_to_move && score > best_score)
+        {
+            best_score = score;
+            best_move = move;
+        }
+        if (!board.white_to_move && score < best_score)
+        {
+            best_score = score;
+            best_move = move;
+        }
+    }
+    return best_move;
+}
+
+                                                                    // MINIMAX ALGORITHM
+// init with a = -inf, b = inf
+int minimax(Board board, int depth, int alpha, int beta)
+{
+    if (depth == 0)
+        return evaluate(board);
+
+    vector<Move> moves = generate_legal_moves(board);
+
+    // CHECKMATE / STALEMATE
+    if (moves.empty())
+    {
+        if (is_checkmate(board)) // checkmate
+        {
+            return board.white_to_move ? depth - MATE_SCORE : MATE_SCORE - depth;
+        }
+        else // stalemate
+            return 0;
     }
 
-    string escape_csv_field(const string& field)
+    if (board.white_to_move) // maximise
     {
-        if (field.find_first_of("\",") == string::npos)
+        int max_eval = -INF;
+        for (Move move : moves)
         {
-            return field;
-        }
+            Board copy = board;
+            apply_move(copy, move);
 
-        string escaped = "\"";
-        for (const char ch : field)
-        {
-            if (ch == '"')
-            {
-                escaped += "\"\"";
-            }
-            else
-            {
-                escaped += ch;
-            }
+            int eval = minimax(copy, depth - 1, alpha, beta);
+            max_eval = max(max_eval, eval);
+            alpha = max(alpha, eval);
+            if (beta <= alpha)
+                break;
         }
-        escaped += "\"";
-        return escaped;
+        return max_eval;
     }
 
-    vector<CsvRow> read_rows_from_csv(const string& file_path)
+    else // minimise
     {
-        ifstream file(file_path);
-        vector<CsvRow> rows;
-
-        if (!file.is_open())
+        int min_eval = INF;
+        for (Move move : moves)
         {
-            return rows;
+            Board copy = board;
+            apply_move(copy, move);
+
+            int eval = minimax(copy, depth - 1, alpha, beta);
+            min_eval = min(min_eval, eval);
+            beta = min(beta, eval);
+            if (beta <= alpha)
+                break;
         }
-
-        string line;
-        bool first_row = true;
-
-        while (getline(file, line))
-        {
-            if (line.empty())
-            {
-                continue;
-            }
-
-            const auto fields = parse_csv_row(line);
-            if (fields.empty())
-            {
-                continue;
-            }
-
-            if (first_row)
-            {
-                first_row = false;
-
-                if (!fields.empty() && (fields[0] == "FEN" || fields[0] == "fen"))
-                {
-                    continue;
-                }
-            }
-
-            if (!fields.empty() && !fields[0].empty())
-            {
-                rows.push_back({
-                    fields[0],
-                    fields.size() > 1 ? fields[1] : ""
-                });
-            }
-        }
-
-        return rows;
+        return min_eval;
     }
 }
 
-vector<EvalResult> evaluate_positions_from_csv(
-    const string& file_path,
-    const string& version)
+int search(Board board, int depth)
 {
-    vector<EvalResult> results;
-    const auto rows = read_rows_from_csv(file_path);
+    if (depth == 0) // depth limit hit -> return value
+        return evaluate(board);
 
-    for (const CsvRow& row : rows)
+    vector<Move> moves = generate_legal_moves(board); // get vector of all legal moves
+
+    // CHECKMATE / STALEMATE
+    if (moves.empty())
     {
-        Board board;
-        load_fen(board, row.fen);
-
-        const int eval_score = evaluate(board);
-
-        results.push_back({
-            row.fen,
-            row.stockfish_eval,
-            eval_score,
-            abs(eval_score)
-        });
+        if (is_checkmate(board)) // checkmate
+        {
+            return board.white_to_move ? depth - MATE_SCORE : MATE_SCORE - depth;
+        }
+        else // stalemate
+            return 0;
     }
 
-    return results;
-}
+    int best = board.white_to_move ? -INF : INF;
 
-bool write_eval_results_to_csv(
-    const vector<EvalResult>& results,
-    const string& file_path,
-    const string& version)
-{
-    ofstream file(file_path);
-
-    if (!file.is_open())
+    for (Move move : moves)
     {
-        return false;
+        Board copy = board;
+        apply_move(copy, move);
+
+        int score = search(copy, depth - 1);
+
+        if (board.white_to_move)
+            best = max(best, score);
+        else
+            best = min(best, score);
     }
-
-    file << "FEN,Stockfish," << escape_csv_field(version) << ",AbsoluteEval\n";
-
-    for (const EvalResult& result : results)
-    {
-        file << escape_csv_field(result.fen) << ",";
-        file << escape_csv_field(result.stockfish_eval) << ",";
-        file << result.eval << ",";
-        file << result.absolute_eval << "\n";
-    }
-
-    return true;
+    return best;
 }
 
-bool evaluate_csv_positions(const string& version)
-{
-    const vector<EvalResult> results = evaluate_positions_from_csv(FILE_PATH, version);
-    return write_eval_results_to_csv(results, FILE_PATH, version);
-}

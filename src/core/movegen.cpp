@@ -672,3 +672,13 @@ static bool is_square_attacked_by_king(const Board &board, int square, bool by_w
     }
     return false;
 }
+
+inline bool is_checkmate(Board &board)
+{
+    if (is_in_check(board,true) || is_in_check(board,false))
+    {
+        if (generate_legal_moves(board).empty())
+            return true;
+    }
+    return false;
+}

@@ -9,9 +9,7 @@ using namespace std;
 using bit8 = uint8_t;
 using bit64 = uint64_t;
 
-// -------------------------
-// Board setup / utility
-// -------------------------
+                                                                    // Board setup / utility
 
 void reset_board(Board &board)
 {
@@ -48,9 +46,7 @@ void clear_board(Board &board)
     board.fullmove_number = 1;
 }
 
-// -------------------------
-// Piece helpers
-// -------------------------
+                                                                    // Piece helpers
 
 // put a piece on a square
 // updates board.squares[] and piece's bitboard
@@ -108,9 +104,7 @@ void move_piece(Board &board, int from, int to)
 }
 
 
-// -------------------------
-// Bitboard helpers
-// -------------------------
+                                                                    // Bitboard helpers
 
 // returns bb of all squares occupied by white
 inline BitB white_occupancy(const Board &board)
@@ -162,9 +156,7 @@ inline BitB straight_attackers(const Board &board, bool white)
            board.bitboards[piece_to_bb_ind(white ? WQ : BQ)];
 }
 
-// -------------------------
-// Position loading
-// -------------------------
+                                                                    // Position loading
 
 void load_start_position(Board &board)
 {
@@ -175,9 +167,7 @@ void load_start_position(Board &board)
     board.black_queen_side = true;
 }
 
-// -------------------------
-// FEN helpers
-// -------------------------
+                                                                    // FEN helpers
 
 // converts Piece p -> char representation in FEN
 // white -> upper, black -> lower

@@ -2,10 +2,27 @@
 
 #include "core/fen.hpp"
 #include "core/movegen.hpp"
+#include "engine/evaluate.hpp"
 
 namespace
 {
 constexpr const char* kStartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
+}
+
+bool Game::make_ai_move(int depth)
+{
+    std::vector<Move> moves = get_legal_moves();
+
+    if (moves.empty())
+        return false;
+
+    Move best_move = find_best_move(board, depth);
+
+    apply_move(board, best_move);
+    last_move = best_move;
+    last_move_exists = true;
+
+    return true;
 }
 
 Game::Game()

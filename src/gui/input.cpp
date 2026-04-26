@@ -79,6 +79,9 @@ void InputHandler::handle_event(
     Button& auto_flip_button,
     Button& copy_fen_button,
     Button& load_fen_button,
+    Button& two_player_button,
+    Button& white_ai_button,
+    Button& black_ai_button,
     TextBox& fen_box
 )
 {
@@ -124,6 +127,9 @@ void InputHandler::handle_event(
                 auto_flip_button,
                 copy_fen_button,
                 load_fen_button,
+                two_player_button,
+                white_ai_button,
+                black_ai_button,
                 fen_box
             );
         }
@@ -169,6 +175,9 @@ void InputHandler::handle_mouse_press(
     Button& auto_flip_button,
     Button& copy_fen_button,
     Button& load_fen_button,
+    Button& two_player_button,
+    Button& white_ai_button,
+    Button& black_ai_button,
     TextBox& fen_box
 )
 {
@@ -221,6 +230,26 @@ void InputHandler::handle_mouse_press(
         {
             trigger_illegal_flash(gui, 0);
         }
+        return;
+    }
+    if (is_mouse_over_button(two_player_button, mouse_pos))
+    {
+        gui.game_mode = GameMode::TwoPlayer;
+        clear_selection(gui);
+        return;
+    }
+
+    if (is_mouse_over_button(white_ai_button, mouse_pos))
+    {
+        gui.game_mode = GameMode::WhiteAI;
+        clear_selection(gui);
+        return;
+    }
+
+    if (is_mouse_over_button(black_ai_button, mouse_pos))
+    {
+        gui.game_mode = GameMode::BlackAI;
+        clear_selection(gui);
         return;
     }
 
