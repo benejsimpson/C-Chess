@@ -1,4 +1,8 @@
 # TO DO:
+
+## More Bitboards
+- refactor remaining codebase to rely solely on bitboards
+
 ## Piece Square Tables
 For each piece type, assign a +/- value relative to the strength of the piece in that position.
 - Create PSQT for different styles of gameplay (opening, middlegame, endgame)
@@ -20,8 +24,4 @@ Same position can occur via many routes. Create hashes to remove unnecessary com
 ## Other Parameters
 - King safety measure
 - Pawn structure
-  + for connected pawns
-  + for passed pawn
-  - for isolated pawn
-  - for doubled pawns
-  - 
+  + +connected +passed -isolated -doubles
