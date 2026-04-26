@@ -1,42 +1,18 @@
 # C++ Chess
 
-My second C++ project - Using bitboards to make a chess game and, eventually, an engine!
+My second C++ project - Using bitboards to make a chess game with AI opponent!
 
 ## Project Summary
-
-This is a C++ chess project with:
-
-- A core chess engine layer in `include/core` and `src/core`
-- A GUI layer built with SFML in `include/gui` and `src/gui`
-- A current runnable app entrypoint in `src/app/main.cpp`
-
 This project is still in-progress. The codebase already supports:
 
-- Board representation
-- Piece placement and board helpers
+- Fully functional chess game for 2 player or AI opponent
+- Minimax search with alpha-beta pruning
 - FEN loading and exporting
-- Full legal move generation
-- Move application
 - A playable SFML board UI with drag-and-drop
-- Board flipping and automatic flipping for each turn
-- FEN copy/load in the GUI
-- Move highlighting, check highlight, illegal move flash, and promotion popup
-
-This does not yet fully support a complete chess engine feature set.
 
 ## Architecture Overview
+Code split into three main layers:
 
-Code split into two main layers:
-
-1. Core chess logic
-2. GUI and user interaction
-
-How it works:
-
-1. `ChessGui` owns a `Game` object.
-2. `Game` owns a `Board`.
-3. The GUI asks `Game` for legal moves, board state, status text, and FEN.
-4. Input events create `Move` attempts.
-5. `Game::try_make_move()` validates the move against generated legal moves.
-6. If valid, the move is applied to the board.
-7. The renderer draws the updated board and UI.
+1. Core chess game logic
+3. Evaluation & Engine
+2. GUI
