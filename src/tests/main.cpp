@@ -15,12 +15,12 @@
 #include "../core/movegen.cpp"
 #include "../engine/evaluate.cpp"
 #include "../engine/perft.cpp"
+#include "../core/bitboard.cpp"
 
 const std::string KIWIPETE = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 
 void print_perft_result(const Board &board, int depth);
-
-void perft_depth_5_starting_position();
+void perft_depth_n_starting_position(int depth);
 void kiwipete_depth_4();
 void eval();
 
@@ -31,7 +31,7 @@ void eval();
 
 int main()
 {
-    
+    perft_depth_n_starting_position(6);
     return 0;
 }
 
@@ -45,14 +45,14 @@ void print_perft_result(const Board &board, int depth)
     std::cout << "perft(" << depth << ") = " << actual << '\n';
 }
 
-void perft_depth_5_starting_position() // passed!
+void perft_depth_n_starting_position(int depth) // passed!
 {
     Board board;
     load_start_position(board);
 
-    std::cout << "Perft Depth : 5\n";
+    std::cout << "Perft Depth : "<< depth << '\n';
 
-    for (int i = 1; i <= 5; i++)
+    for (int i = 1; i <= depth; i++)
     {
         print_perft_result(board, i);
     }

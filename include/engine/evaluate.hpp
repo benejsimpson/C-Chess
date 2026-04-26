@@ -31,7 +31,7 @@ inline int evaluate(const Board &board)
     for (int i = 0; i < 5; i++)
     {
         eval +=
-            (count_set_bits(board.bitboards[W_BB[i]].bits) - count_set_bits(board.bitboards[B_BB[i]].bits)) * PIECES[i];
+            (count_set_bits(board.bitboards[W_BB[i]]) - count_set_bits(board.bitboards[B_BB[i]])) * PIECES[i];
     }
     return eval;
 }

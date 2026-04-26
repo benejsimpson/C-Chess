@@ -141,21 +141,21 @@ inline BitB all_occupancy(const Board &board)
     return white_occupancy(board) | black_occupancy(board);
 }
 
-// returns int of square king is on
+// returns index of [white] king
 inline int king_square(const Board& board, bool white)
 {
     const BitB king_bb = board.bitboards[piece_to_bb_ind(white ? WK : BK)];
     return king_bb ? lsb_index(king_bb) : -1;
 }
 
-// returns bb of all squares with white / black queen & bishop
+// returns bb of all squares with [white] queen & bishop
 inline BitB diagonal_attackers(const Board &board, bool white)
 {
     return board.bitboards[piece_to_bb_ind(white ? WB : BB)] |
            board.bitboards[piece_to_bb_ind(white ? WQ : BQ)];
 }
 
-// returns bb of all squares with white / black queen & rook
+// returns bb of all squares with [white] queen & rook
 inline BitB straight_attackers(const Board &board, bool white)
 {
     return board.bitboards[piece_to_bb_ind(white ? WR : BR)] |

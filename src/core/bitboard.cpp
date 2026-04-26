@@ -47,7 +47,8 @@ inline int count_bits(BitB bb)
 // for King bb this would be the index of the king
 inline int lsb_index(BitB bb)
 {
-    return __builtin_ctz(bb); // counts trailling zeros of ULL
+    if (bb != 0)
+        return __builtin_ctzll(bb); // counts trailling zeros of ULL
 }
 
 // removes the least significant bit and returns its index
