@@ -2,6 +2,7 @@
 #include "engine/perft.hpp"
 #include "core/movegen.hpp"
 #include "core/makemove.hpp"
+#include "core/movelist.hpp"
 
 using namespace std;
 
@@ -10,7 +11,7 @@ uint64_t perft(const Board& board, int depth)
     if (depth == 0)
         return 1;
 
-    vector<Move> moves = generate_legal_moves(board); // generates all legal moves in the position
+    MoveList moves = generate_legal_moves(board); // generates all legal moves in the position
 
     uint64_t nodes = 0;
 

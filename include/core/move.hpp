@@ -1,90 +1,104 @@
 #pragma once
-#include <vector>
 #include <cstdint>
 #include "utils.h"
 #include "board.hpp"
 
-                                                                    // Move flags
+using Move = uint16_t;
 
+constexpr int FLAG_SHIFT = 12;
+constexpr int TO_SHIFT = 6;
+constexpr int FROM_SHIFT = 0;
+
+constexpr uint16_t FLAG_MASK = 0b1111000000000000;
+constexpr uint16_t TO_MASK = 0b0000111111000000;
+constexpr uint16_t FROM_MASK = 0b0000000000111111;
+
+// Move flags
 enum MoveFlag : uint8_t
 {
-    QUIET = 0,      // normal move
-    CAPTURE,
+    QUIET = 0, // normal move
+    CAPTURE,   // capture
 
-    DOUBLE_PAWN,    // pawn moves 2 squares
-    EN_PASSANT,
+    KING_CASTLE,  // king side castle
+    QUEEN_CASTLE, // queen side castle
 
-    KING_CASTLE,    // king side castle
-    QUEEN_CASTLE,   // queen side castle
+    DOUBLE_PAWN, // pawn double step
+    EN_PASSANT,  // en passant
 
-    PROMOTION,      // pawn promotion (no capture)
-    PROMO_CAPTURE   // promotion with capture
+    N_PROMO, // pawn promote to knight
+    B_PROMO, // pawn promote to bishop
+    R_PROMO, // pawn promote to rook
+    Q_PROMO, // pawn promote to queen
 };
 
-
-                                                                    // Move structure
-
-struct Move
+// Move flag helpers
+inline bool is_promotion_flag(int flag)
 {
-    int from;           // index of square moved from
-    int to;             // index of square moved to
-
-    Piece piece;       // piece moving
-    Piece captured;    // captured piece
-
-    MoveFlag flag;     // special move type
-
-    Piece promotion;   // promotion piece (if any, else Empty)
-
-};
-
-
-                                                                    // Helper functions
-
-// create a basic move
-inline Move create_move(int from, int to, Piece piece, Piece captured)
-{
-    return Move{
-        from,
-        to,
-        piece,
-        captured,
-        (captured == Empty ? QUIET : CAPTURE),
-        Empty
-    };
+    return flag >= Q_PROMO && flag <= N_PROMO;
 }
 
-inline Move create_move(
-    int from,
-    int to,
-    Piece piece,
-    Piece captured,
-    MoveFlag flag,
-    Piece promotion = Empty)
+inline bool is_capture(const Board &board, Move move)
 {
-    return Move{
-        from,
-        to,
-        piece,
-        captured,
-        flag,
-        promotion
-    };
+    return is_bit_set(board.bb_all, get_to(move)) ||
+           get_flag(move) == EN_PASSANT; // need to check en passant move flag as no piece on square
 }
 
-void apply_move(Board &board, const Move &move);
-
-// check if move is capture
-inline bool is_capture(const Move& m)
+inline bool is_castle(Move move)
 {
-    return m.captured != Empty;
+    return get_flag(move) == KING_CASTLE ||
+           get_flag(move) == QUEEN_CASTLE;
 }
 
-// check if move is promotion
-inline bool is_promotion(const Move& m)
+inline bool is_en_passant(Move move)
 {
-    return m.flag == PROMOTION || m.flag == PROMO_CAPTURE;
+    return get_flag(move) == EN_PASSANT;
 }
 
-bool is_castle(const Move& m);
-bool is_en_passant(const Move& m);
+// Move structure
+
+inline Move create_move(int from, int to, int flag)
+{
+    // Stores a move as 16-bit representation:
+    // FFFF TTTTTT SSSSSS
+    // Flag Target Start
+    // Unpack with : get_[from, to, flag](move)
+    return (from << FROM_SHIFT) |
+           (to << TO_SHIFT) |
+           (flag << FLAG_SHIFT);
+}
+
+// Move parsing
+inline int get_from(Move move)
+{
+    return (move >> FROM_SHIFT) & 0x3F; // 6 bits
+}
+
+inline int get_to(Move move)
+{
+    return (move >> TO_SHIFT) & 0x3F;
+}
+
+inline int get_flag(Move move)
+{
+    return (move >> FLAG_SHIFT) & 0xF; // 4 bits
+}
+
+// Helper functions
+void apply_move(Board &board, Move move);
+inline Piece promotion_piece_from_flag(MoveFlag flag, bool white)
+{
+    switch (flag)
+    {
+    case Q_PROMO:
+        return white ? WQ : BQ;
+    case R_PROMO:
+        return white ? WR : BR;
+    case B_PROMO:
+        return white ? WB : BB;
+    case N_PROMO:
+        return white ? WN : BN;
+
+    default:
+        return Empty;
+    }
+}

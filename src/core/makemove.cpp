@@ -1,16 +1,6 @@
 #include "core/makemove.hpp"
 
-                                                                    // Internal helpers
-static bool is_rook_start_square(int square, Piece piece)
-{
-    if (piece == WR && (square == 0 || square == 7))
-        return true;
-
-    if (piece == BR && (square == 56 || square == 63))
-        return true;
-
-    return false;
-}
+                                                            // Internal helpers
 
 static void remove_castling_rights_for_rook(Board& board, int square, Piece rook)
 {
@@ -49,17 +39,20 @@ static void remove_castling_rights_for_king(Board& board, Piece king)
 
                                                                     // Main move application
 
-void apply_move(Board& board, const Move& move)
+void apply_move(Board& board, Move move)
 {
-    Piece moved_piece = move.piece;
-    Piece captured_piece = move.captured;
+    const int from = get_from(move);
+    const int to = get_to(move);
+    const MoveFlag flag = static_cast<MoveFlag>(get_flag(move));
+
+    const Piece moved_piece = board.squares[from];
+    const Piece captured_piece = board.squares[to];
 
     // move removes possible en-passant
     // allow en-passant only when double pawn move
-    board.en_passant_square = -1;
+    board.en_passant_square = EMPTY_BB;
 
     // Update castling rights before moving pieces
-
     // if king moves, that side loses both castling rights
     if (get_piece_type(moved_piece) == KING)
     {
@@ -69,98 +62,68 @@ void apply_move(Board& board, const Move& move)
     // if a rook moves from its original square, that side loses that rook's castling right
     if (get_piece_type(moved_piece) == ROOK)
     {
-        remove_castling_rights_for_rook(board, move.from, moved_piece);
+        remove_castling_rights_for_rook(board, from, moved_piece);
     }
 
     // if a rook is captured on its original square, that side loses that castling right
     if (captured_piece != Empty && get_piece_type(captured_piece) == ROOK)
     {
-        remove_castling_rights_for_rook(board, move.to, captured_piece);
+        remove_castling_rights_for_rook(board, to, captured_piece);
     }
+
+    // CAPTURE
+    if (captured_piece != Empty)
+        remove_piece(board, to);
 
                                                                     // Handle move by flag
 
     // en passant capture
-    if (move.flag == EN_PASSANT)
+    if (flag == EN_PASSANT)
     {
-        move_piece(board, move.from, move.to);
-
-        // Captured pawn is not on the target square.
-        int captured_square;
-
-        if (is_white(moved_piece))
-            captured_square = move.to - 8;
-        else
-            captured_square = move.to + 8;
-
-        remove_piece(board, captured_square);
+        move_piece(board, from, to);
+        // captured pawn is not on square moved to
+        // adjust index to remove captured pawn
+        remove_piece(board, to + (board.white_to_move ? -8 : 8));
     }
 
     // king-side castle
-    else if (move.flag == KING_CASTLE)
+    else if (flag == KING_CASTLE)
     {
-        move_piece(board, move.from, move.to);
-
-        // Move rook as well
-        if (moved_piece == WK)
-        {
-            move_piece(board, 7, 5);   // h1 -> f1
-        }
-        else if (moved_piece == BK)
-        {
-            move_piece(board, 63, 61); // h8 -> f8
-        }
+        move_piece(board, from, to);
+        // move rook as well
+        // white : 7 -> 5, black : 63 -> 61
+        move_piece(board,
+            (board.white_to_move ? 7 : 63),
+            (board.white_to_move ? 5 : 61));
     }
 
     // queen-side castle
-    else if (move.flag == QUEEN_CASTLE)
+    else if (flag == QUEEN_CASTLE)
     {
-        move_piece(board, move.from, move.to);
-
-        // Move rook as well
-        if (moved_piece == WK)
-        {
-            move_piece(board, 0, 3);   // a1 -> d1
-        }
-        else if (moved_piece == BK)
-        {
-            move_piece(board, 56, 59); // a8 -> d8
-        }
+        move_piece(board, from, to);
+        // move rook as well
+        // white : 0 -> 3, black : 56 -> 59
+        move_piece(board,
+            (board.white_to_move ? 0 : 56),
+            (board.white_to_move ? 3 : 59));
     }
 
-    // promotion without capture
-    else if (move.flag == PROMOTION)
+    // promotion
+    else if (is_promotion_flag(flag))
     {
-        remove_piece(board, move.from);
-        place_piece(board, move.to, move.promotion);
+        remove_piece(board, from);
+        // place promoted piece in place of piece
+        place_piece(board, to, promotion_piece_from_flag(flag, board.white_to_move));
     }
 
-    // promotion with capture
-    else if (move.flag == PROMO_CAPTURE)
-    {
-        remove_piece(board, move.from);
-        remove_piece(board, move.to);
-        place_piece(board, move.to, move.promotion);
-    }
-
-    // normal move / normal capture / double pawn move
+    // normal move / double pawn move
     else
     {
-        if (captured_piece != Empty)
-        {
-            remove_piece(board, move.to);
-        }
+        move_piece(board, from, to);
 
-        move_piece(board, move.from, move.to);
-
-        // If a pawn moved 2 squares, record the en passant target square.
-        if (move.flag == DOUBLE_PAWN)
-        {
-            if (is_white(moved_piece))
-                board.en_passant_square = move.from + 8;
-            else
-                board.en_passant_square = move.from - 8;
-        }
+        // If a pawn moved 2 squares, record the en passant target square
+        if (flag == DOUBLE_PAWN)
+            board.en_passant_square = 1 << (from + (board.white_to_move ? 8 : -8));
     }
 
     // change side to move

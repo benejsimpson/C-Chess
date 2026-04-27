@@ -4,6 +4,7 @@
 #include "core/fen.hpp"
 #include "core/move.hpp"
 #include "core/movegen.hpp"
+#include "core/movelist.hpp"
 
 #include <cstdint>
 #include <cmath>

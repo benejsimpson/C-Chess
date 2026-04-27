@@ -10,4 +10,4 @@
 // - en passant square
 // - castling rights
 // - fullmove number
-void apply_move(Board& board, const Move& move);
+void apply_move(Board& board, Move move);

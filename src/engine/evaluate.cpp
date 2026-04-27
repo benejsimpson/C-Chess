@@ -15,7 +15,7 @@ inline int evaluate_material(const Board &board)
     for (int i = 0; i < 5; i++)
     {
         eval +=
-            (count_bits(board.bitboards[W_BB[i]]) - count_bits(board.bitboards[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
+            (count_bits(board.bb_pieces[W_BB[i]]) - count_bits(board.bb_pieces[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
     }
     return eval;
 }
@@ -28,7 +28,7 @@ inline int psqt_score(const Board &board)
     for (int i = 0; i < 6; i++)
     {
         // copy of white piece bitboard
-        BitB w_copy = board.bitboards[WHITE_BB_INDS[i]];
+        BitB w_copy = board.bb_pieces[WHITE_BB_INDS[i]];
 
         while (w_copy != 0)
         {
@@ -37,7 +37,7 @@ inline int psqt_score(const Board &board)
         }
 
         // copy of black piece bitboard
-        BitB b_copy = board.bitboards[BLACK_BB_INDS[i]];
+        BitB b_copy = board.bb_pieces[BLACK_BB_INDS[i]];
         while (b_copy != 0)
         {
             // subtract piece square value for piece to eval
@@ -49,7 +49,7 @@ inline int psqt_score(const Board &board)
 
 Move find_best_move(Board board, int depth)
 {
-    vector<Move> moves = generate_legal_moves(board);
+    MoveList moves = generate_legal_moves(board);
 
     Move best_move = moves[0];
 
@@ -76,17 +76,17 @@ Move find_best_move(Board board, int depth)
     return best_move;
 }
 
-                                                                    // MINIMAX ALGORITHM
+// MINIMAX ALGORITHM
 // init with a = -inf, b = inf
 int minimax(Board board, int depth, int alpha, int beta)
 {
     if (depth == 0)
         return evaluate(board);
 
-    vector<Move> moves = generate_legal_moves(board);
+    Move moves = generate_legal_moves(board);
 
     // CHECKMATE / STALEMATE
-    if (moves.empty())
+    if (moves)
     {
         if (is_checkmate(board)) // checkmate
         {
@@ -136,7 +136,7 @@ int search(Board board, int depth)
     if (depth == 0) // depth limit hit -> return value
         return evaluate(board);
 
-    vector<Move> moves = generate_legal_moves(board); // get vector of all legal moves
+    Move moves = generate_legal_moves(board); // get vector of all legal moves
 
     // CHECKMATE / STALEMATE
     if (moves.empty())
@@ -165,4 +165,3 @@ int search(Board board, int depth)
     }
     return best;
 }
-
