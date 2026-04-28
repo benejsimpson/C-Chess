@@ -5,6 +5,7 @@
 #include "core/move.hpp"
 #include "core/movegen.hpp"
 #include "core/movelist.hpp"
+#include "core/makemove.hpp"
 
 #include <cstdint>
 #include <cmath>

@@ -2,6 +2,7 @@
 
 #include "core/fen.hpp"
 #include "core/movegen.hpp"
+#include "core/makemove.hpp"
 #include "engine/evaluate.hpp"
 
 namespace
@@ -11,7 +12,7 @@ constexpr const char* kStartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w
 
 bool Game::make_ai_move(int depth)
 {
-    std::vector<Move> moves = get_legal_moves();
+    MoveList moves = get_legal_moves();
 
     if (moves.empty())
         return false;
@@ -35,12 +36,12 @@ const Board& Game::get_board() const
     return board;
 }
 
-std::vector<Move> Game::get_legal_moves() const
+MoveList Game::get_legal_moves() const
 {
     return generate_legal_moves(board);
 }
 
-std::vector<Move> Game::get_legal_moves_for_square(int square) const
+MoveList Game::get_legal_moves_for_square(int square) const
 {
     return generate_legal_moves_for_square(board, square);
 }
@@ -91,7 +92,7 @@ bool Game::is_check() const
 std::string Game::get_status_text() const
 {
     const bool white_turn = board.white_to_move;
-    const std::vector<Move> legal_moves = get_legal_moves();
+    MoveList legal_moves = get_legal_moves();
 
     if (legal_moves.empty())
     {

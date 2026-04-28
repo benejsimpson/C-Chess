@@ -16,8 +16,8 @@ public:
 
     const Board& get_board() const;
 
-    std::vector<Move> get_legal_moves() const;
-    std::vector<Move> get_legal_moves_for_square(int square) const;
+    MoveList get_legal_moves() const;
+    MoveList get_legal_moves_for_square(int square) const;
 
     bool try_make_move(const Move& move);
 

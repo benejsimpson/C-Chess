@@ -1,4 +1,5 @@
 #include "core/makemove.hpp"
+#include <iostream>
 
                                                             // Internal helpers
 
@@ -37,20 +38,33 @@ static void remove_castling_rights_for_king(Board& board, Piece king)
     }
 }
 
+static bool is_capture(const Board &board, Move move) // UNUSED
+{
+    return is_bit_set(all_occupancy(board), move_to(move)) ||
+           move_flag(move) == EN_PASSANT; // need to check en passant move flag as no piece on square
+}
+
                                                                     // Main move application
 
 void apply_move(Board& board, Move move)
 {
-    const int from = get_from(move);
-    const int to = get_to(move);
-    const MoveFlag flag = static_cast<MoveFlag>(get_flag(move));
+    const int from = move_from(move);
+    const int to = move_to(move);
+    const MoveFlag flag = static_cast<MoveFlag>(move_flag(move));
 
     const Piece moved_piece = board.squares[from];
     const Piece captured_piece = board.squares[to];
 
+    if (captured_piece == WK || captured_piece == BK)
+    {
+        std::cout << "ERROR: attempted to capture king: "
+                  << from << " -> " << to << '\n';
+        return;
+    }
+
     // move removes possible en-passant
     // allow en-passant only when double pawn move
-    board.en_passant_square = EMPTY_BB;
+    board.en_passant_square = -1;
 
     // Update castling rights before moving pieces
     // if king moves, that side loses both castling rights
@@ -123,7 +137,7 @@ void apply_move(Board& board, Move move)
 
         // If a pawn moved 2 squares, record the en passant target square
         if (flag == DOUBLE_PAWN)
-            board.en_passant_square = 1 << (from + (board.white_to_move ? 8 : -8));
+            board.en_passant_square = from + (board.white_to_move ? 8 : -8);
     }
 
     // change side to move
@@ -136,3 +150,4 @@ void apply_move(Board& board, Move move)
         board.fullmove_number++;
     }
 }
+

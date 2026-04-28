@@ -114,11 +114,7 @@ inline constexpr bool is_valid_index(int index)
     return 0 <= index && index < 64;
 }
 
-inline constexpr bool is_valid_file_rank(int file, int rank)
-{
-    return 0 <= file && file <= 7 &&
-           0 <= rank && rank <= 7;
-}
+
 
 inline std::string square_to_name(int square)
 {

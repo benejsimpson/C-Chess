@@ -1,4 +1,5 @@
 #include "engine/evaluate.hpp"
+
 #include <cmath>
 
 using namespace std;
@@ -15,7 +16,7 @@ inline int evaluate_material(const Board &board)
     for (int i = 0; i < 5; i++)
     {
         eval +=
-            (count_bits(board.bb_pieces[W_BB[i]]) - count_bits(board.bb_pieces[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
+            (count_bits(board.bitboards[W_BB[i]]) - count_bits(board.bitboards[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
     }
     return eval;
 }
@@ -28,7 +29,7 @@ inline int psqt_score(const Board &board)
     for (int i = 0; i < 6; i++)
     {
         // copy of white piece bitboard
-        BitB w_copy = board.bb_pieces[WHITE_BB_INDS[i]];
+        BitB w_copy = board.bitboards[WHITE_BB_INDS[i]];
 
         while (w_copy != 0)
         {
@@ -37,7 +38,7 @@ inline int psqt_score(const Board &board)
         }
 
         // copy of black piece bitboard
-        BitB b_copy = board.bb_pieces[BLACK_BB_INDS[i]];
+        BitB b_copy = board.bitboards[BLACK_BB_INDS[i]];
         while (b_copy != 0)
         {
             // subtract piece square value for piece to eval
@@ -50,6 +51,14 @@ inline int psqt_score(const Board &board)
 Move find_best_move(Board board, int depth)
 {
     MoveList moves = generate_legal_moves(board);
+
+    // No legal moves: checkmate or stalemate
+    if (moves.empty())
+        return 0; // no move
+
+    // Safety: never search below depth 1
+    if (depth < 1)
+        depth = 1;
 
     Move best_move = moves[0];
 
@@ -67,12 +76,13 @@ Move find_best_move(Board board, int depth)
             best_score = score;
             best_move = move;
         }
-        if (!board.white_to_move && score < best_score)
+        else if (!board.white_to_move && score < best_score)
         {
             best_score = score;
             best_move = move;
         }
     }
+
     return best_move;
 }
 
@@ -80,20 +90,17 @@ Move find_best_move(Board board, int depth)
 // init with a = -inf, b = inf
 int minimax(Board board, int depth, int alpha, int beta)
 {
-    if (depth == 0)
+    if (depth <= 0)
         return evaluate(board);
 
-    Move moves = generate_legal_moves(board);
+    MoveList moves = generate_legal_moves(board);
 
-    // CHECKMATE / STALEMATE
-    if (moves)
+    if (moves.empty())
     {
-        if (is_checkmate(board)) // checkmate
-        {
+        if (is_checkmate(board))
             return board.white_to_move ? depth - MATE_SCORE : MATE_SCORE - depth;
-        }
-        else // stalemate
-            return 0;
+
+        return 0;
     }
 
     if (board.white_to_move) // maximise
@@ -136,7 +143,7 @@ int search(Board board, int depth)
     if (depth == 0) // depth limit hit -> return value
         return evaluate(board);
 
-    Move moves = generate_legal_moves(board); // get vector of all legal moves
+    MoveList moves = generate_legal_moves(board); // get vector of all legal moves
 
     // CHECKMATE / STALEMATE
     if (moves.empty())

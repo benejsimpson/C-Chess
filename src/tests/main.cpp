@@ -22,7 +22,7 @@ const std::string KIWIPETE = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/
 
 void print_perft_result(const Board &board, int depth);
 void perft_depth_n_starting_position(int depth);
-void kiwipete_depth_4();
+void kiwipete_depth_n(int depth);
 void eval_to_csv();
 
 
@@ -32,7 +32,7 @@ void eval_to_csv();
 
 int main()
 {
-    eval_to_csv();
+    kiwipete_depth_n(5);
     return 0;
 }
 
@@ -57,12 +57,12 @@ void perft_depth_n_starting_position(int depth) // passed!
     }
 }
 
-void kiwipete_depth_4() // passed!
+void kiwipete_depth_n(int depth) // passed!
 {
     Board board;
     load_start_position(board);
     load_fen(board, KIWIPETE);
-    for (int i = 1; i <= 4; i++)
+    for (int i = 1; i <= depth; i++)
     {
         print_perft_result(board, i);
     }

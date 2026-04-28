@@ -31,30 +31,7 @@ enum MoveFlag : uint8_t
     Q_PROMO, // pawn promote to queen
 };
 
-// Move flag helpers
-inline bool is_promotion_flag(int flag)
-{
-    return flag >= Q_PROMO && flag <= N_PROMO;
-}
-
-inline bool is_capture(const Board &board, Move move)
-{
-    return is_bit_set(board.bb_all, get_to(move)) ||
-           get_flag(move) == EN_PASSANT; // need to check en passant move flag as no piece on square
-}
-
-inline bool is_castle(Move move)
-{
-    return get_flag(move) == KING_CASTLE ||
-           get_flag(move) == QUEEN_CASTLE;
-}
-
-inline bool is_en_passant(Move move)
-{
-    return get_flag(move) == EN_PASSANT;
-}
-
-// Move structure
+                                                                    // Move structure
 
 inline Move create_move(int from, int to, int flag)
 {
@@ -67,24 +44,47 @@ inline Move create_move(int from, int to, int flag)
            (flag << FLAG_SHIFT);
 }
 
-// Move parsing
-inline int get_from(Move move)
+                                                                    // Move parsing
+
+// takes 16 bit move representation
+// returns index of square moved from
+inline const int move_from(Move move)
 {
     return (move >> FROM_SHIFT) & 0x3F; // 6 bits
 }
-
-inline int get_to(Move move)
+// takes 16 bit move representation
+// returns index of square moved to
+inline const int move_to(Move move)
 {
     return (move >> TO_SHIFT) & 0x3F;
 }
-
-inline int get_flag(Move move)
+// takes 16 bit move representation
+// returns int of MoveFlag
+inline const int move_flag(Move move)
 {
     return (move >> FLAG_SHIFT) & 0xF; // 4 bits
 }
 
-// Helper functions
-void apply_move(Board &board, Move move);
+                                                                    // Move flag helpers
+inline bool is_promotion_flag(int flag)
+{
+    return flag >= N_PROMO && flag <= Q_PROMO;
+}
+
+inline bool is_castle(Move move)
+{
+    return move_flag(move) == KING_CASTLE ||
+           move_flag(move) == QUEEN_CASTLE;
+}
+
+inline bool is_en_passant(Move move)
+{
+    return move_flag(move) == EN_PASSANT;
+}
+
+
+
+                                                                    // Piece helper functions
 inline Piece promotion_piece_from_flag(MoveFlag flag, bool white)
 {
     switch (flag)
