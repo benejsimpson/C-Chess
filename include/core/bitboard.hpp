@@ -95,13 +95,13 @@ inline int pop_lsb(BitB& bb)
                                                                     // Board masks
 
 // returns ULL with set bits on rank indexed 0-7
-constexpr BitB rank_mask(const int rank)
+inline constexpr BitB rank_mask(const int rank)
 {
     return 0xFFULL << (8 * rank);
 }
 
 // returns ULL with set bits on file indexed 0-7
-constexpr BitB file_mask(int file)
+inline constexpr BitB file_mask(int file)
 {
     return FILE_A << file;
 }

@@ -2,27 +2,23 @@
 #include "board.hpp"
 #include "move.hpp"
 #include "core/movelist.hpp"
-#include <vector>
 #include <array>
+#include <cstdint>
+
+using BitB = uint64_t;
 
 inline constexpr int KNIGHT_MOVES[8][2] =
-{
-    {1, 2}, {1, -2}, {-1, 2}, {-1, -2},
-    {2, 1}, {2, -1}, {-2, 1}, {-2, -1}
-};
+    {
+        {1, 2}, {1, -2}, {-1, 2}, {-1, -2}, {2, 1}, {2, -1}, {-2, 1}, {-2, -1}};
 inline constexpr int KING_MOVES[8][2] =
-{
-    {0, 1}, {1, 0}, {0, -1}, {-1, 0},
-    {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
-};
+    {
+        {0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 inline constexpr int DIAGONAL_MOVES[4][2] =
-{
-    {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
-};
+    {
+        {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 inline constexpr int STRAIGHT_MOVES[4][2] =
-{
-    {0, 1}, {0, -1}, {1, 0}, {-1, 0}
-};
+    {
+        {0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
 inline constexpr bool is_valid_file_rank(int file, int rank)
 {
@@ -38,15 +34,14 @@ inline constexpr int get_move_to_ind(int from, int d_file, int d_rank)
 {
     const int to_rank = index_to_rank(from) + d_rank;
     const int to_file = index_to_file(from) + d_file;
-    
-    if (!is_valid_file_rank(to_file,to_rank))
+
+    if (!is_valid_file_rank(to_file, to_rank))
         return -1;
-    
+
     return from + (8 * d_rank) + d_file;
 }
 
-
-                                                                        // attack masks
+// attack masks
 constexpr BitB pawn_attack_mask(const int square, const bool white)
 {
     BitB res = EMPTY_BB;
@@ -55,7 +50,7 @@ constexpr BitB pawn_attack_mask(const int square, const bool white)
     for (int d_file : d_files)
     {
         const int att_sq = get_move_to_ind(square, d_file, d_rank);
-        
+
         if (att_sq == -1)
             continue;
         res |= square_mask(att_sq);
@@ -92,12 +87,12 @@ constexpr BitB king_attack_mask(int square)
     }
     return res;
 }
-                                                                        // Load attack masks
+// Load attack masks
 
 constexpr std::array<BitB, 64> build_pawn_attacks(bool white)
 {
     std::array<BitB, 64> table{};
-    for (int sq = 0; sq < 64;sq++)
+    for (int sq = 0; sq < 64; sq++)
     {
         if (sq < 8 || sq >= 56)
         {
@@ -109,10 +104,10 @@ constexpr std::array<BitB, 64> build_pawn_attacks(bool white)
     return table;
 }
 
-constexpr std::array<BitB,64> build_knight_attacks()
+constexpr std::array<BitB, 64> build_knight_attacks()
 {
     std::array<BitB, 64> table{};
-    for (int sq = 0; sq < 64;sq++)
+    for (int sq = 0; sq < 64; sq++)
     {
         table[sq] = knight_attack_mask(sq);
     }
@@ -122,9 +117,50 @@ constexpr std::array<BitB,64> build_knight_attacks()
 constexpr std::array<BitB, 64> build_king_attacks()
 {
     std::array<BitB, 64> table{};
-    for (int sq = 0; sq < 64;sq++)
+    for (int sq = 0; sq < 64; sq++)
     {
         table[sq] = king_attack_mask(sq);
+    }
+    return table;
+}
+
+constexpr BitB passed_pawn_bitmask(int square, bool white)
+{
+    const int start_rank = index_to_rank(square);
+    const int file = index_to_file(square);
+
+    BitB relevant_files = file_mask(file);
+
+    // Add file to the left, if it exists
+    if (file > 0)
+        relevant_files |= file_mask(file - 1);
+
+    // Add file to the right, if it exists
+    if (file < 7)
+        relevant_files |= file_mask(file + 1);
+
+    BitB forward_ranks = EMPTY_BB;
+
+    if (white)
+    {
+        for (int rank = start_rank + 1; rank <= 7; ++rank)
+            forward_ranks |= rank_mask(rank);
+    }
+    else
+    {
+        for (int rank = start_rank - 1; rank >= 0; --rank)
+            forward_ranks |= rank_mask(rank);
+    }
+
+    return relevant_files & forward_ranks;
+}
+
+constexpr std::array<BitB, 64> build_passed_pawn_bitmasks(bool white)
+{
+    std::array<BitB, 64> table{};
+    for (int sq = 0; sq < 64; sq++)
+    {
+        table[sq] = passed_pawn_bitmask(sq, white);
     }
     return table;
 }
@@ -134,6 +170,9 @@ inline constexpr std::array<BitB, 64> BLACK_PAWN_ATTACKS = build_pawn_attacks(fa
 inline constexpr std::array<BitB, 64> KNIGHT_ATTACKS = build_knight_attacks();
 inline constexpr std::array<BitB, 64> KING_ATTACKS = build_king_attacks();
 
+inline constexpr std::array<BitB, 64> WHITE_PASSED_PAWN_MASKS = build_passed_pawn_bitmasks(true);
+inline constexpr std::array<BitB, 64> BLACK_PASSED_PAWN_MASKS = build_passed_pawn_bitmasks(false);
+
 // generates all possible moves that can be made by a side
 MoveList generate_pseudo_legal_moves(const Board &board);
 
@@ -141,15 +180,27 @@ MoveList generate_pseudo_legal_moves(const Board &board);
 MoveList generate_legal_moves(const Board &board);
 
 // legal move generation for a specific piece on a square
-MoveList generate_legal_moves_for_square(const Board& board, int square);
+MoveList generate_legal_moves_for_square(const Board &board, int square);
 
-bool same_move(const Move& a, const Move& b);
-bool is_in_check(const Board& board, bool white_king);
+bool same_move(const Move &a, const Move &b);
+bool is_in_check(const Board &board, bool white_king);
 bool king_can_castle_kingside(const Board &board, bool white);
 bool king_can_castle_queenside(const Board &board, bool white);
 
 static inline std::vector<int> squares_to_check_between_king_and_rook(bool white, bool kingside);
 static bool squares_between_king_and_rook_clear(const Board &board, bool white, bool kingside);
 
-
 inline bool is_checkmate(Board &board);
+
+inline bool is_passed_pawn(const Board& board, int square, bool white)
+{
+    BitB enemy_pawns = white
+        ? board.bitboards[piece_to_bb_ind(BP)]
+        : board.bitboards[piece_to_bb_ind(WP)];
+
+    BitB mask = white
+        ? WHITE_PASSED_PAWN_MASKS[square]
+        : BLACK_PASSED_PAWN_MASKS[square];
+
+    return (enemy_pawns & mask) == EMPTY_BB;
+}
