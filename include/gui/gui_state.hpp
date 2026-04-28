@@ -15,7 +15,7 @@ enum class GameMode
 struct GuiState
 {
     GameMode game_mode = GameMode::TwoPlayer;
-    int search_depth = 5;
+    int search_depth = 4;
     
                                                     // Selection
     int selected_square = -1;

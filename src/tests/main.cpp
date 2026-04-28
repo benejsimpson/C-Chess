@@ -32,7 +32,7 @@ void eval_to_csv();
 
 int main()
 {
-    kiwipete_depth_n(5);
+    kiwipete_depth_n(4);
     return 0;
 }
 

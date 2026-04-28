@@ -105,13 +105,15 @@ MoveList generate_legal_moves(const Board &board)
 
 // Check whether a move leaves the side's king safe
 
-static bool is_legal_position_after_move(const Board &board, const Move &move)
+static bool is_legal_position_after_move(const Board& board, const Move &move)
 {
     Board copy = board;
+
+    bool side_that_moved = copy.white_to_move;
+
     apply_move(copy, move);
 
-    // Check the king of the side that made the move
-    return !is_in_check(copy, board.white_to_move);
+    return !is_in_check(copy, side_that_moved);
 }
 // Piece move generators
 
@@ -560,12 +562,10 @@ static bool is_square_attacked_by_king(const Board &board, int square, bool by_w
 
 inline bool is_checkmate(Board &board)
 {
-    if (is_in_check(board, true) || is_in_check(board, false))
-    {
-        if ((generate_legal_moves(board).empty()))
-            return true;
-    }
-    return false;
+    if (!is_in_check(board, board.white_to_move))
+        return false;
+
+    return generate_legal_moves(board).empty();
 }
 
 static BitB capturable_opponent_occupancy(const Board& board, bool white)
