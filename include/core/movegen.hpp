@@ -7,6 +7,8 @@
 
 using BitB = uint64_t;
 
+                                                                                                        // move displacement for piece types
+
 inline constexpr int KNIGHT_MOVES[8][2] =
     {
         {1, 2}, {1, -2}, {-1, 2}, {-1, -2}, {2, 1}, {2, -1}, {-2, 1}, {-2, -1}};
@@ -19,6 +21,8 @@ inline constexpr int DIAGONAL_MOVES[4][2] =
 inline constexpr int STRAIGHT_MOVES[4][2] =
     {
         {0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+                                                                                                        // square index helpers
 
 inline constexpr bool is_valid_file_rank(int file, int rank)
 {
@@ -41,7 +45,7 @@ inline constexpr int get_move_to_ind(int from, int d_file, int d_rank)
     return from + (8 * d_rank) + d_file;
 }
 
-// attack masks
+                                                                                                        // attack masks for tables
 constexpr BitB pawn_attack_mask(const int square, const bool white)
 {
     BitB res = EMPTY_BB;
@@ -87,18 +91,12 @@ constexpr BitB king_attack_mask(int square)
     }
     return res;
 }
-// Load attack masks
 
 constexpr std::array<BitB, 64> build_pawn_attacks(bool white)
 {
     std::array<BitB, 64> table{};
     for (int sq = 0; sq < 64; sq++)
     {
-        if (sq < 8 || sq >= 56)
-        {
-            table[sq] = EMPTY_BB;
-            continue;
-        }
         table[sq] = pawn_attack_mask(sq, white);
     }
     return table;
@@ -123,6 +121,14 @@ constexpr std::array<BitB, 64> build_king_attacks()
     }
     return table;
 }
+
+                                                                                                        // board attack mask generation
+
+inline BitB generate_attack_masks_for_side(const Board &board, bool white);
+
+inline void update_attack_masks(Board &board);
+
+                                                                                                        // pawn passed pawn masks
 
 constexpr BitB passed_pawn_bitmask(int square, bool white)
 {
@@ -165,6 +171,11 @@ constexpr std::array<BitB, 64> build_passed_pawn_bitmasks(bool white)
     return table;
 }
 
+// returns true if a pawn on given square is a passed pawn (no enemy pawns in front or on adjacent files)
+inline bool is_passed_pawn(const Board &board, int square, bool white);
+
+                                                                                                        // mask arrays
+
 inline constexpr std::array<BitB, 64> WHITE_PAWN_ATTACKS = build_pawn_attacks(true);
 inline constexpr std::array<BitB, 64> BLACK_PAWN_ATTACKS = build_pawn_attacks(false);
 inline constexpr std::array<BitB, 64> KNIGHT_ATTACKS = build_knight_attacks();
@@ -173,6 +184,8 @@ inline constexpr std::array<BitB, 64> KING_ATTACKS = build_king_attacks();
 inline constexpr std::array<BitB, 64> WHITE_PASSED_PAWN_MASKS = build_passed_pawn_bitmasks(true);
 inline constexpr std::array<BitB, 64> BLACK_PASSED_PAWN_MASKS = build_passed_pawn_bitmasks(false);
 
+                                                                                                        // move generation
+
 // generates all possible moves that can be made by a side
 MoveList generate_pseudo_legal_moves(const Board &board);
 
@@ -180,27 +193,14 @@ MoveList generate_pseudo_legal_moves(const Board &board);
 MoveList generate_legal_moves(const Board &board);
 
 // legal move generation for a specific piece on a square
-MoveList generate_legal_moves_for_square(const Board &board, int square);
+MoveList generate_legal_moves_for_square(const Board &board, const int square);
 
-bool same_move(const Move &a, const Move &b);
-bool is_in_check(const Board &board, bool white_king);
-bool king_can_castle_kingside(const Board &board, bool white);
-bool king_can_castle_queenside(const Board &board, bool white);
+                                                                                                        // move legality and check detection
 
-static inline std::vector<int> squares_to_check_between_king_and_rook(bool white, bool kingside);
-static bool squares_between_king_and_rook_clear(const Board &board, bool white, bool kingside);
+inline bool is_in_check(const Board &board, bool white_king);
 
 inline bool is_checkmate(Board &board);
 
-inline bool is_passed_pawn(const Board& board, int square, bool white)
-{
-    BitB enemy_pawns = white
-        ? board.bitboards[piece_to_bb_ind(BP)]
-        : board.bitboards[piece_to_bb_ind(WP)];
+static void generate_king_castles(const Board& board, MoveList& moves, int from);
 
-    BitB mask = white
-        ? WHITE_PASSED_PAWN_MASKS[square]
-        : BLACK_PASSED_PAWN_MASKS[square];
-
-    return (enemy_pawns & mask) == EMPTY_BB;
-}
+inline bool same_move(const Move &a, const Move &b);

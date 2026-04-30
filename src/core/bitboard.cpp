@@ -1,6 +1,13 @@
 #include "core/bitboard.hpp"
 #include <iostream>
 
+                                                                    // update bitboards for piece moved
+
+
+
+
+
+
                                                                     // debug / display helpers
 
 // prints 8x8 chess board representation of bitboard

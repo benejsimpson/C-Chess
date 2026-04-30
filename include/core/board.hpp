@@ -46,6 +46,8 @@ struct Board
 {
     Piece squares[64];      // what is on each square of the board
     BitB bitboards[12];     // bitboard for each piece and its positions
+    BitB white_attacks = 0; // bitboard of all squares attacked by white pieces
+    BitB black_attacks = 0; // bitboard of all squares attacked by black pieces
 
     bool white_to_move;     // who moves next
 
@@ -61,6 +63,9 @@ struct Board
     int en_passant_square;  // -1 if none
 
     int fullmove_number;    // starts at 1
+
+    uint64_t hash = 0;      // Zobrist hash of current board position
+    std::vector<uint64_t> position_history;
 };
 
                                                                     // Board setup / utility
@@ -221,6 +226,8 @@ inline constexpr bool is_piece_on_board(const Board &board, Piece piece)
 }
 
 
+
+
 void place_piece(Board &board, int square, Piece piece);
 void remove_piece(Board &board, int square);
 void move_piece(Board &board, int from, int to);
@@ -231,6 +238,22 @@ inline BitB all_occupancy(const Board &board);
 inline BitB diagonal_attackers(const Board &board, bool white);
 inline BitB straight_attackers(const Board &board, bool white);
 inline int king_square(const Board &board, bool white);
+
+                                                                    // Zobrist hashing helpers
+
+// returns an index from 0-15 for the 16 possible castling rights combinations
+inline int castling_index(const Board& board)
+{
+    int index = 0;
+
+    if (board.white_king_side)      index |= 1;
+    if (board.white_queen_side)     index |= 2;
+    if (board.black_king_side)      index |= 4;
+    if (board.black_queen_side)     index |= 8;
+
+    return index;
+}
+
 
                                                                     // Position loading
 

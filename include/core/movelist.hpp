@@ -20,6 +20,11 @@ struct MoveList
         moves[count++] = move;
     }
 
+    constexpr inline int get_move_score(const Move &move)
+    {
+        
+    }
+
     void clear()
     {
         count = 0;

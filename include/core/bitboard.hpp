@@ -33,9 +33,6 @@ constexpr BitB FILE_A = 0x0101010101010101ULL;
 
                                                                     // basic square masks
 
-
-                                                                    // basic square masks
-
 // returns a 0ULL with single bit set at square index
 constexpr BitB square_mask(int square)
 {

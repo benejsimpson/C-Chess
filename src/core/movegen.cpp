@@ -6,9 +6,26 @@
 #include <vector>
 using namespace std;
 
-// --------------------------------------------------
-// Internal helpers
-// --------------------------------------------------
+                                                                                    // Constants and tables
+
+// bitmask of squares that must be empty for white to castle kingside  
+constexpr BitB WHITE_KINGSIDE_CASTLE_EMPTY_SQUARES = 1ULL << 5| 1ULL << 6;
+// bitmask of squares that must be empty for white to castle queenside
+constexpr BitB WHITE_QUEENSIDE_CASTLE_EMPTY_SQUARES = 1ULL << 1 | 1ULL << 2| 1ULL << 3;
+// bitmask of squares that must be empty for black to castle kingside
+constexpr BitB BLACK_KINGSIDE_CASTLE_EMPTY_SQUARES = 1ULL << 61 | 1ULL << 62;
+// bitmask of squares that must be empty for black to castle queenside
+constexpr BitB BLACK_QUEENSIDE_CASTLE_EMPTY_SQUARES = 1ULL << 57 | 1ULL << 58 | 1ULL << 59;
+//bitmask of squares that must not be attacked for white to castle kingside
+constexpr BitB WHITE_KINGSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 4 | 1ULL << 5 | 1ULL << 6;
+// bitmask of squares that must not be attacked for white to castle queenside
+constexpr BitB WHITE_QUEENSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 2 | 1ULL << 3 | 1ULL << 4;
+// bitmask of squares that must not be attacked for black to castle kingside
+constexpr BitB BLACK_KINGSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 60 | 1ULL << 61 | 1ULL << 62;
+// bitmask of squares that must not be attacked for black to castle queenside
+constexpr BitB BLACK_QUEENSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 58 | 1ULL << 59 | 1ULL << 60;
+
+                                                                                    // Internal helpers
 
 static void generate_pawn_moves(const Board &board, MoveList &moves, int square);
 static void generate_knight_moves(const Board &board, MoveList &moves, int square);
@@ -18,19 +35,34 @@ static void generate_queen_moves(const Board &board, MoveList &moves, int square
 static void generate_king_moves(const Board &board, MoveList &moves, int square);
 static bool is_legal_position_after_move(const Board &board, const Move &move);
 bool is_in_check(const Board &board, bool white_king);
-
-// returns true if square is attacked by enemy [piece_type]
 static bool is_square_attacked_by_pawn(const Board &board, int square, bool by_white);
 static bool is_square_attacked_by_knight(const Board &board, int square, bool by_white);
 static bool is_square_attacked_by_diagonal(const Board &board, int square, bool by_white);
 static bool is_square_attacked_by_straight(const Board &board, int square, bool by_white);
 static bool is_square_attacked_by_king(const Board &board, int square, bool by_white);
-
 bool is_square_attacked(const Board &board, int square, bool by_white);
 static BitB capturable_opponent_occupancy(const Board &board, bool white);
 
-bool king_can_castle_kingside(const Board &board, bool white);
-bool king_can_castle_queenside(const Board &board, bool white);
+
+                                                                                    // Move generation
+
+MoveList generate_legal_moves(const Board &board)
+{
+    MoveList pseudo_moves = generate_pseudo_legal_moves(board);
+    MoveList legal_moves;
+
+    for (int i = 0; i < pseudo_moves.count; ++i)
+    {
+        Move move = pseudo_moves.moves[i];
+
+        if (is_legal_position_after_move(board, move))
+        {
+            legal_moves.add(move);
+        }
+    }
+
+    return legal_moves;
+}
 
 MoveList generate_pseudo_legal_moves(const Board &board)
 {
@@ -81,29 +113,25 @@ MoveList generate_pseudo_legal_moves(const Board &board)
     return moves;
 }
 
-// --------------------------------------------------
-// Generate all fully legal moves
-// --------------------------------------------------
-
-MoveList generate_legal_moves(const Board &board)
+MoveList generate_legal_moves_for_square(const Board &board, const int square)
 {
-    MoveList pseudo_moves = generate_pseudo_legal_moves(board);
-    MoveList legal_moves;
+    MoveList moves;
+    MoveList all_moves = generate_legal_moves(board);
 
-    for (int i = 0; i < pseudo_moves.count; ++i)
+    for (int i = 0; i < all_moves.count; ++i)
     {
-        Move move = pseudo_moves.moves[i];
+        Move move = all_moves.moves[i];
 
-        if (is_legal_position_after_move(board, move))
+        if (move_from(move) == square)
         {
-            legal_moves.add(move);
+            moves.add(move);
         }
     }
 
-    return legal_moves;
+    return moves;
 }
 
-// Check whether a move leaves the side's king safe
+                                                                                    // Piece move generation helpers
 
 static bool is_legal_position_after_move(const Board& board, const Move &move)
 {
@@ -115,7 +143,6 @@ static bool is_legal_position_after_move(const Board& board, const Move &move)
 
     return !is_in_check(copy, side_that_moved);
 }
-// Piece move generators
 
 static void generate_pawn_moves(const Board &board, MoveList &moves, int from)
 {
@@ -124,7 +151,7 @@ static void generate_pawn_moves(const Board &board, MoveList &moves, int from)
     const int direction = white ? 8 : -8;
 
     const BitB all_occup = all_occupancy(board);
-    const BitB opp_occup = capturable_opponent_occupancy(board, white);
+    const BitB capture_occup = capturable_opponent_occupancy(board, white);
 
     const int one_forward = from + direction;
     const bool promotion_rank = rank == (white ? 6 : 1);
@@ -164,7 +191,7 @@ static void generate_pawn_moves(const Board &board, MoveList &moves, int from)
         {
             moves.add(create_move(from, to, EN_PASSANT));
         }
-        else if (is_bit_set(opp_occup, to))
+        else if (is_bit_set(capture_occup, to))
         {
             if (promotion_rank)
             {
@@ -185,11 +212,11 @@ static void generate_knight_moves(const Board &board, MoveList &moves, int from)
 {
     const BitB all_occup = all_occupancy(board); // bb of all occupied squares
     const bool white = board.white_to_move; // piece on start square is a [white] piece
-    const BitB opp_occup = capturable_opponent_occupancy(board, white);
+    const BitB capture_occup = capturable_opponent_occupancy(board, white);
 
     BitB const can_move_to_squares = KNIGHT_ATTACKS[from];
     BitB empty_squares_to_move_to = can_move_to_squares & ~all_occup;
-    BitB squares_with_opponent_pieces = can_move_to_squares & opp_occup;
+    BitB squares_with_opponent_pieces = can_move_to_squares & capture_occup;
 
     while (empty_squares_to_move_to)
     {
@@ -207,37 +234,37 @@ static void generate_knight_moves(const Board &board, MoveList &moves, int from)
 static void generate_bishop_moves(const Board &board, MoveList &moves, int square)
 {
     const BitB all_occup = all_occupancy(board);    // bb of all occupied squares
-    const bool white = board.white_to_move; // piece on start square is a [white] piece
-    const BitB opp_occup = capturable_opponent_occupancy(board, white);
+    const bool white = board.white_to_move;         // piece on start square is a [white] piece
+    const BitB capture_occup = capturable_opponent_occupancy(board, white);
 
-    for (int i = 0; i < 4; i++) // loop through each diagonal direction from start square
+    // loop through each diagonal direction from start square
+    for (int i = 0; i < 4; i++) 
     {
         int curr_sq = square;
         while (true)
         {
-            const int tar_sq = get_move_to_ind( // gets next square index on diagonal
+            // get next square index on diagonal
+            const int tar_sq = get_move_to_ind(
                 curr_sq,
                 DIAGONAL_MOVES[i][0],
                 DIAGONAL_MOVES[i][1]);
 
-            if (tar_sq == -1) // if off board -> try another diagonal
+            if (tar_sq == -1)                               // if off board -> try another diagonal
                 break;
 
-            if (!is_bit_set(all_occup, tar_sq)) // empty square -> piece can move here
+            if (!is_bit_set(all_occup, tar_sq))             // empty square -> piece can move here
             {
                 moves.add(create_move(square, tar_sq, QUIET));
             }
 
-            else if (is_bit_set(opp_occup,tar_sq))
+            else if (is_bit_set(capture_occup,tar_sq))      // opponent piece on square -> can capture but no more moves on this diagonal
             {
                 moves.add(create_move(square, tar_sq, CAPTURE));
                 break;
             }
-
-            // own piece blocks moves
+                                                            // own piece blocks moves
             else
                 break;
-
             curr_sq = tar_sq;
         }
     }
@@ -245,14 +272,14 @@ static void generate_bishop_moves(const Board &board, MoveList &moves, int squar
 
 static void generate_rook_moves(const Board &board, MoveList &moves, int square)
 {
-    const BitB all_occup = all_occupancy(board);    // bb of all occupied squares
-    const bool white = board.white_to_move; // piece on start square is a [white] piece
-    const BitB opp_occup = capturable_opponent_occupancy(board, white);
+    const BitB all_occup = all_occupancy(board);            // bb of all occupied squares
+    const bool white = board.white_to_move;                 // piece on start square is a [white] piece?
+    const BitB capture_occup = capturable_opponent_occupancy(board, white);
 
-    // moves along a rank
+    // loop through each straight direction from start square
     for (int i = 0; i < 4; i++)
     {
-        int curr_sq = square; // current square testing - init as start square
+        int curr_sq = square;                               // current square being tested
         const int d_file = STRAIGHT_MOVES[i][0];
         const int d_rank = STRAIGHT_MOVES[i][1];
 
@@ -264,12 +291,12 @@ static void generate_rook_moves(const Board &board, MoveList &moves, int square)
             if (tar_sq == -1)
                 break;
 
-            if (!is_bit_set(all_occup, tar_sq)) // no piece on square -> can make quiet move
+            if (!is_bit_set(all_occup, tar_sq))             // no piece on square -> can make quiet move
             {
                 moves.add(create_move(square, tar_sq, QUIET));
             }
 
-            else if (is_bit_set(opp_occup,tar_sq)) // opponent piece on square -> can capture
+            else if (is_bit_set(capture_occup,tar_sq))      // opponent piece on square -> can capture
             {
                 moves.add(create_move(square, tar_sq, CAPTURE));
                 break;
@@ -278,7 +305,6 @@ static void generate_rook_moves(const Board &board, MoveList &moves, int square)
             // own piece blocks moves
             else
                 break;
-
             curr_sq = tar_sq;
         }
     }
@@ -295,183 +321,24 @@ static void generate_king_moves(const Board &board, MoveList &moves, int from)
 {
     const bool white = board.white_to_move;
     const BitB all_occup = all_occupancy(board);
-    const BitB opp_occup = capturable_opponent_occupancy(board, white);
+    const BitB capture_occup = capturable_opponent_occupancy(board, white);
+    const BitB opp_attacks = white ? board.black_attacks : board.white_attacks;
 
     BitB king_moves = KING_ATTACKS[from];
 
     while (king_moves)
     {
         const int to = pop_lsb(king_moves);
-        if (is_bit_set(opp_occup, to))
+        if (is_bit_set(capture_occup, to) && !is_bit_set(opp_attacks, to)) // can capture opponent piece if square not attacked by opponent
             moves.add(create_move(from, to, CAPTURE));
-        else if (!is_bit_set(all_occup, to))
+        else if (!is_bit_set(all_occup, to) && !is_bit_set(opp_attacks, to)) // can move to empty square if not attacked by opponent
             moves.add(create_move(from, to, QUIET));
     }
 
-    // CASTLING
-    if (king_can_castle_kingside(board, white))
-        moves.add(
-            create_move(from, white ? 6 : 62, KING_CASTLE));
-
-    if (king_can_castle_queenside(board, white))
-        moves.add(
-            create_move(from, white ? 2 : 58, QUEEN_CASTLE));
+    generate_king_castles(board, moves, from);
 }
 
-bool is_in_check(const Board &board, bool white_king)
-{
-    int king_sq = king_square(board, white_king);
-    if (king_sq == -1)
-        return true;
-
-    if (white_king)
-        return is_square_attacked(board, king_sq, false);
-    else
-        return is_square_attacked(board, king_sq, true);
-}
-
-bool is_square_attacked(const Board &board, int square, bool by_white)
-{
-    if (!is_valid_index(square))
-    {
-        cout << "INVALID SQUARE in is_square_attacked : "<<square<<"\n";
-        return false;
-    }
-    if (is_square_attacked_by_pawn(board, square, by_white))
-        return true;
-    if (is_square_attacked_by_knight(board, square, by_white))
-        return true;
-    if (is_square_attacked_by_diagonal(board, square, by_white))
-        return true;
-    if (is_square_attacked_by_straight(board, square, by_white))
-        return true;
-    if (is_square_attacked_by_king(board, square, by_white))
-        return true;
-    return false;
-}
-
-MoveList generate_legal_moves_for_square(const Board &board, int square)
-{
-    MoveList moves;
-    MoveList all_moves = generate_legal_moves(board);
-
-    for (int i = 0; i < all_moves.count; ++i)
-    {
-        Move move = all_moves.moves[i];
-
-        if (move_from(move) == square)
-        {
-            moves.add(move);
-        }
-    }
-
-    return moves;
-}
-
-bool same_move(const Move &a, const Move &b)
-{
-    return move_from(a) == move_from(b) &&
-           move_to(a) == move_to(b) &&
-           move_flag(a) == move_flag(b);
-}
-
-// returns true if [white] king can castle kingside
-bool king_can_castle_kingside(const Board &board, bool white)
-{
-    if ( // FEN has no kingside castling rights -> false
-         // updated when rook is moved so no need to check for rook on starting square
-        white
-            ? !board.white_king_side
-            : !board.black_king_side)
-        return false;
-
-    if ( // king is not on start square -> false
-        king_square(board, white) != (white ? 4 : 60))
-        return false;
-
-    if (!squares_between_king_and_rook_clear(board, white, true))
-        return false;
-
-    for (int sq : squares_to_check_between_king_and_rook(white, true))
-    {
-        // king castling through check -> false
-        if (is_square_attacked(board, sq, !white))
-            return false;
-    }
-
-    // currently in check -> false
-    if (is_in_check(board, white))
-        return false;
-
-    return true;
-}
-
-// returns true if [white] king can castle queenside
-bool king_can_castle_queenside(const Board &board, bool white)
-{
-    if ( // FEN has no queenside castling rights -> false
-         // updated when rook is moved so no need to check for rook on starting square
-        white
-            ? !board.white_queen_side
-            : !board.black_queen_side)
-        return false;
-
-    if ( // king is not on start square -> false
-        king_square(board, white) != (white ? 4 : 60))
-        return false;
-
-    // squares between king and rook are not clear -> false
-    if (!squares_between_king_and_rook_clear(board, white, false))
-        return false;
-
-    int squares_king_castles_through[2] =
-        {
-            white ? 2 : 58,
-            white ? 3 : 59};
-
-    for (int sq : squares_king_castles_through)
-    {
-        if (is_square_attacked(board, sq, !white))
-            return false;
-    }
-
-    // currently in check -> false
-    if (is_in_check(board, white))
-        return false;
-
-    return true;
-}
-
-static inline vector<int> squares_to_check_between_king_and_rook(bool white, bool kingside)
-{
-    vector<int> squares_to_check;
-    if (kingside)
-    {
-        if (white)
-            squares_to_check = {5, 6};
-        else
-            squares_to_check = {61, 62};
-    }
-    else
-    {
-        if (white)
-            squares_to_check = {1, 2, 3};
-        else
-            squares_to_check = {57, 58, 59};
-    }
-    return squares_to_check;
-}
-
-static bool squares_between_king_and_rook_clear(const Board &board, bool white, bool kingside)
-{
-    vector<int> squares_to_check = squares_to_check_between_king_and_rook(white, kingside);
-    for (int sq : squares_to_check)
-    {
-        if (is_bit_set(all_occupancy(board), sq))
-            return false;
-    }
-    return true;
-}
+                                                                                    // check / attack helpers
 
 static bool is_square_attacked_by_pawn(const Board &board, int square, bool by_white)
 {
@@ -519,6 +386,7 @@ static bool is_square_attacked_by_diagonal(const Board &board, int square, bool 
     }
     return false;
 }
+
 static bool is_square_attacked_by_straight(const Board &board, int square, bool by_white)
 {
     if (straight_attackers(board, by_white) == EMPTY_BB)
@@ -560,6 +428,48 @@ static bool is_square_attacked_by_king(const Board &board, int square, bool by_w
         != EMPTY_BB;
 }
 
+bool is_in_check(const Board &board, bool white_king)
+{
+    int king_sq = king_square(board, white_king);
+    if (king_sq == -1)
+    {
+        cout << "ERROR: is_in_check returned king_square = -1\n";
+        return true;
+    }
+
+    if (white_king)
+        return is_square_attacked(board, king_sq, false);
+    else
+        return is_square_attacked(board, king_sq, true);
+}
+
+bool is_square_attacked(const Board &board, int square, bool by_white)
+{
+    if (!is_valid_index(square))
+    {
+        cout << "INVALID SQUARE in is_square_attacked : "<<square<<"\n";
+        return false;
+    }
+    if (is_square_attacked_by_pawn(board, square, by_white))
+        return true;
+    if (is_square_attacked_by_knight(board, square, by_white))
+        return true;
+    if (is_square_attacked_by_diagonal(board, square, by_white))
+        return true;
+    if (is_square_attacked_by_straight(board, square, by_white))
+        return true;
+    if (is_square_attacked_by_king(board, square, by_white))
+        return true;
+    return false;
+}
+
+bool same_move(const Move &a, const Move &b)
+{
+    return move_from(a) == move_from(b) &&
+           move_to(a) == move_to(b) &&
+           move_flag(a) == move_flag(b);
+}
+
 inline bool is_checkmate(Board &board)
 {
     if (!is_in_check(board, board.white_to_move))
@@ -568,6 +478,169 @@ inline bool is_checkmate(Board &board)
     return generate_legal_moves(board).empty();
 }
 
+                                                                                    // NEW ATTACK MASKS
+
+// generates bitboard of all squares [white] attacks - stores in board.[white/black]_attacks
+// used for move generation and check detection
+// this includes white attacking white pieces
+// eg. if a white queen is blocked by a white knight, a bit will still be set at the position of the white knight
+// hence, this mask can also be used to detect defended pieces
+inline BitB generate_attack_masks_for_side(const Board &board, bool white)
+{
+    BitB attacks = 0;
+    const BitB all_occup = all_occupancy(board);
+
+    // Pawns
+    BitB pawns = board.bitboards[piece_to_bb_ind(white ? WP : BP)];
+    while (pawns)
+    {
+        int from = pop_lsb(pawns);
+        attacks |= white ? WHITE_PAWN_ATTACKS[from] : BLACK_PAWN_ATTACKS[from];
+    }
+
+    // Knights
+    BitB knights = board.bitboards[piece_to_bb_ind(white ? WN : BN)];
+    while (knights)
+    {
+        int from = pop_lsb(knights);
+        attacks |= KNIGHT_ATTACKS[from];
+    }
+
+    // Bishops
+    BitB diagonals = diagonal_attackers(board,white);
+    while (diagonals)
+    {
+        int from = pop_lsb(diagonals);
+        for (auto& dir : DIAGONAL_MOVES)
+        {
+            int square = get_move_to_ind(from,dir[0],dir[1]);
+
+            while (square != -1)
+            {
+                attacks |= square_mask(square);
+                if (is_bit_set(all_occup,square))
+                    break;
+                square = get_move_to_ind(square,dir[0],dir[1]);
+                
+            }
+        }
+    }
+
+    // Straight pieces (rooks + queens)
+    BitB straights = straight_attackers(board, white);
+    while (straights)
+    {
+        int from = pop_lsb(straights);
+        for (auto& dir : STRAIGHT_MOVES)
+        {
+            int square = get_move_to_ind(from, dir[0], dir[1]);
+
+            while (square != -1)
+            {
+                attacks |= square_mask(square);
+                if (is_bit_set(all_occup,square))
+                    break;
+                square = get_move_to_ind(square, dir[0], dir[1]);
+            }
+        }
+    }
+
+    BitB king = board.bitboards[piece_to_bb_ind(white ? WK : BK)];
+    int from = lsb_index(king);
+    if (from == -1)
+        cout << "ERROR generate_attack_masks_for_side : king not found\n";
+    else
+        attacks |= KING_ATTACKS[from];
+
+    return attacks;
+}
+
+// updates board.[white/black]_attacks
+// must be called after every move is made or when fen is loaded
+inline void update_attack_masks(Board &board)
+{
+    board.white_attacks = generate_attack_masks_for_side(board, true);
+    board.black_attacks = generate_attack_masks_for_side(board, false);
+}
+
+inline bool is_passed_pawn(const Board &board, int square, bool white)
+{
+    BitB enemy_pawns = white
+        ? board.bitboards[piece_to_bb_ind(BP)]
+        : board.bitboards[piece_to_bb_ind(WP)];
+
+    BitB mask = white
+        ? WHITE_PASSED_PAWN_MASKS[square]
+        : BLACK_PASSED_PAWN_MASKS[square];
+
+    return (enemy_pawns & mask) == EMPTY_BB;
+}
+
+
+                                                                                    // castling helpers
+
+// generates legal castling moves - updates MoveList moves
+static void generate_king_castles(const Board& board, MoveList& moves, int from)
+{
+    const bool white = board.white_to_move;
+    const BitB all_occup = all_occupancy(board);
+    const BitB rook_bb = board.bitboards[piece_to_bb_ind(white ? WR : BR)];
+    const BitB opp_attacks = white ? board.black_attacks : board.white_attacks;
+
+    // get kings square and squares of rooks on both sides
+    const bool rook_can_castle_kingside = is_bit_set(rook_bb, (white ? 7 : 63));
+    const bool rook_can_castle_queenside = is_bit_set(rook_bb, (white ? 0 : 56));
+
+    if (from != (white ? 4 : 60))
+        return;
+
+    if (rook_can_castle_kingside && (white ? board.white_king_side : board.black_king_side))
+    {
+        // kingside castle squares that must be empty between king and rook
+        const BitB kingside_squares_mask =
+        white
+        ? WHITE_KINGSIDE_CASTLE_EMPTY_SQUARES
+        : BLACK_KINGSIDE_CASTLE_EMPTY_SQUARES;
+
+        if ((kingside_squares_mask & all_occup) == 0) // squares between king and rook are empty :)
+        {
+            // kingside castle attacked squares
+            const BitB kingside_attacked_squares_mask =
+            white
+            ? WHITE_KINGSIDE_CASTLE_ATTACKED_SQUARES
+            : BLACK_KINGSIDE_CASTLE_ATTACKED_SQUARES;
+
+            if ((kingside_attacked_squares_mask & opp_attacks) == 0) // squares king passes through are not attacked
+                moves.add(create_move(from, (white ? 6 : 62), KING_CASTLE));
+        }
+    }
+
+    if (rook_can_castle_queenside && (white ? board.white_queen_side : board.black_queen_side))
+    {
+        // queenside castle squares that must be empty between king and rook
+        const BitB queenside_squares_mask =
+        white
+        ? WHITE_QUEENSIDE_CASTLE_EMPTY_SQUARES
+        : BLACK_QUEENSIDE_CASTLE_EMPTY_SQUARES;
+
+        if ((queenside_squares_mask & all_occup) == 0) // squares between king and rook are empty :)
+        {
+            // queenside castle attacked squares
+            const BitB queenside_attacked_squares_mask =
+            white
+            ? WHITE_QUEENSIDE_CASTLE_ATTACKED_SQUARES
+            : BLACK_QUEENSIDE_CASTLE_ATTACKED_SQUARES;
+
+            if ((queenside_attacked_squares_mask & opp_attacks) == 0) // squares king passes through are not attacked
+                moves.add(create_move(from, (white ? 2 : 58), QUEEN_CASTLE));
+        }
+    }
+}
+
+                                                                                    // other helpers
+
+// bitboard of opponent pieces that can be captured by the side to move
+// does not include opponent king since it cannot be captured
 static BitB capturable_opponent_occupancy(const Board& board, bool white)
 {
     BitB opp = white ? black_occupancy(board) : white_occupancy(board);
@@ -577,3 +650,4 @@ static BitB capturable_opponent_occupancy(const Board& board, bool white)
 
     return opp;
 }
+

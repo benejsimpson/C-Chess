@@ -1,4 +1,5 @@
 #include "engine/evaluate.hpp"
+#include "engine/tt.hpp"
 
 #include <cmath>
 
@@ -6,7 +7,10 @@ using namespace std;
 
 inline int evaluate(const Board &board)
 {
-    return evaluate_material(board) + psqt_score(board);
+    if (is_checkmate(const_cast<Board&>(board)))
+        return board.white_to_move ? -MATE_SCORE : MATE_SCORE;
+
+    return psqt_score(board);
 }
 
 inline int evaluate_material(const Board &board)
@@ -34,7 +38,7 @@ inline int psqt_score(const Board &board)
         while (w_copy != 0)
         {
             // add piece square value for piece to eval
-            eval += ALL_PSQT[i][pop_lsb(w_copy)];
+            eval += PIECE_MATERIAL_SCORE[i] + OPENING_PSQT[i][pop_lsb(w_copy)];
         }
 
         // copy of black piece bitboard
@@ -42,11 +46,13 @@ inline int psqt_score(const Board &board)
         while (b_copy != 0)
         {
             // subtract piece square value for piece to eval
-            eval -= ALL_PSQT[i][mirror_square(pop_lsb(b_copy))];
+            eval -= PIECE_MATERIAL_SCORE[i] + OPENING_PSQT[i][mirror_square(pop_lsb(b_copy))];
         }
     }
     return eval;
 }
+
+
 
 Move find_best_move(Board board, int depth)
 {
@@ -86,10 +92,34 @@ Move find_best_move(Board board, int depth)
     return best_move;
 }
 
+
+
 // MINIMAX ALGORITHM
 // init with a = -inf, b = inf
 int minimax(Board board, int depth, int alpha, int beta)
 {
+    const int og_alpha = alpha;
+    const int og_beta = beta;
+
+    TTEntry entry;
+    if (tt_probe(board.hash,entry))
+    {
+        if (entry.depth >= depth)
+        {
+            if (entry.flag == EXACT)
+                return entry.score;
+
+            if (entry.flag == LOWER_BOUND)
+                alpha = max(alpha, entry.score);
+
+            else if (entry.flag == UPPER_BOUND)
+                beta = min(beta, entry.score);
+
+            if (alpha >= beta)
+                return entry.score;
+        }
+    }
+
     if (depth <= 0)
         return evaluate(board);
 
@@ -97,65 +127,116 @@ int minimax(Board board, int depth, int alpha, int beta)
 
     if (moves.empty())
     {
-        if (is_checkmate(board))
-            return board.white_to_move ? depth - MATE_SCORE : MATE_SCORE - depth;
-
-        return 0;
-    }
-
-    if (board.white_to_move) // maximise
-    {
-        int max_eval = -INF;
-        for (Move move : moves)
-        {
-            Board copy = board;
-            apply_move(copy, move);
-
-            int eval = minimax(copy, depth - 1, alpha, beta);
-            max_eval = max(max_eval, eval);
-            alpha = max(alpha, eval);
-            if (beta <= alpha)
-                break;
-        }
-        return max_eval;
-    }
-
-    else // minimise
-    {
-        int min_eval = INF;
-        for (Move move : moves)
-        {
-            Board copy = board;
-            apply_move(copy, move);
-
-            int eval = minimax(copy, depth - 1, alpha, beta);
-            min_eval = min(min_eval, eval);
-            beta = min(beta, eval);
-            if (beta <= alpha)
-                break;
-        }
-        return min_eval;
-    }
-}
-
-int search(Board board, int depth)
-{
-    if (depth == 0) // depth limit hit -> return value
-        return evaluate(board);
-
-    MoveList moves = generate_legal_moves(board); // get vector of all legal moves
-
-    // CHECKMATE / STALEMATE
-    if (moves.empty())
-    {
         if (is_checkmate(board)) // checkmate
         {
-            return board.white_to_move ? depth - MATE_SCORE : MATE_SCORE - depth;
+            return board.white_to_move
+            ? depth - MATE_SCORE
+            : MATE_SCORE - depth;
         }
         else // stalemate
             return 0;
     }
 
+    if (is_draw_by_repetition(board))
+        return 0;
+
+    int best_score;
+    Move best_move = 0;
+
+    if (board.white_to_move) // maximise
+    {
+        best_score = -INF;
+
+        for (Move move : moves)
+        {
+            Board copy = board;
+            apply_move(copy, move);
+
+            int eval = minimax(copy, depth - 1, alpha, beta);
+
+            if (eval > best_score)
+            {
+                best_score = eval;
+                best_move = move;
+            }
+
+            alpha = max(alpha, eval);
+
+            if (beta <= alpha)
+                break;
+        }
+    }
+
+    else // minimise
+    {
+        best_score = INF;
+
+        for (Move move : moves)
+        {
+            Board copy = board;
+            apply_move(copy, move);
+
+            int eval = minimax(copy, depth - 1, alpha, beta);
+
+            if (eval < best_score)
+            {
+                best_score = eval;
+                best_move = move;
+            }
+
+            beta = min(beta, eval);
+
+            if (beta <= alpha)
+                break;
+        }
+    }
+
+    // STORE RESULT IN TRANSPOSITION TABLE
+    TTEntry new_entry;
+    new_entry.key = board.hash;
+    new_entry.depth = depth;
+    new_entry.score = best_score;
+    new_entry.best_move = best_move;
+
+    if (best_score <= og_alpha)
+        new_entry.flag = UPPER_BOUND;
+    else if (best_score >= og_beta)
+        new_entry.flag = LOWER_BOUND;
+    else
+        new_entry.flag = EXACT;
+
+    tt_store(board.hash, new_entry);
+
+    return best_score;
+}
+
+
+
+int search(Board board, int depth)
+{
+
+    if (depth == 0) // depth limit hit -> return eval
+        return evaluate(board);
+
+    // get array of all legal moves from MoveList
+    MoveList moves = generate_legal_moves(board);
+
+                                                            // CHECKMATE / STALEMATE
+    if (moves.empty())
+    {
+        if (is_checkmate(board)) // checkmate
+        {
+            return board.white_to_move
+            ? depth - MATE_SCORE
+            : MATE_SCORE - depth;
+        }
+        else // stalemate
+            return 0;
+    }
+
+    if (is_draw_by_repetition(board))
+        return 0;
+    
     int best = board.white_to_move ? -INF : INF;
 
     for (Move move : moves)
@@ -172,3 +253,4 @@ int search(Board board, int depth)
     }
     return best;
 }
+

@@ -1,6 +1,8 @@
 #pragma once
 #include "utils.h"
 
+inline constexpr char START_FEN[58] = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+
 // Parse FEN & load position
 struct Board;
 

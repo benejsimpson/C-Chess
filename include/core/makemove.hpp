@@ -1,6 +1,7 @@
 #pragma once
 #include "board.hpp"
 #include "move.hpp"
+#include "engine/zobrist.hpp"
 
 // Apply one move to the board
 // updates:

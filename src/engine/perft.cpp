@@ -14,13 +14,65 @@ uint64_t perft(const Board& board, int depth)
     MoveList moves = generate_legal_moves(board); // generates all legal moves in the position
 
     uint64_t nodes = 0;
+    int en_passant = 0;
+    int captures = 0;
+    int castles = 0;
+    int promotions = 0;
+    int checks = 0;
 
-    for (const Move& move : moves) // loop through each possible next move
+    for (const Move& move : moves)      // loop through each possible next move
     {
-        Board copy = board; // create a copy of the board starting position
-        apply_move(copy, move); // applies the next move to the copy of the board
+        const string from =
+        square_to_name(move_from(move));
+        
+        const string to =
+        square_to_name(move_to(move));
+        
+        const char piece =
+        piece_to_char(board.squares[move_from(move)]);
+
+        const char captured_piece =
+        piece_to_char(board.squares[move_to(move)]);
+        
+        const MoveFlag flag =
+        static_cast<MoveFlag>(move_flag(move));
+        
+        Board copy = board;             // create a copy of the board starting position
+        apply_move(copy, move);         // applies the next move to the copy of the board
+
+        if (captured_piece == 'k' || captured_piece == 'K')
+        {
+            cout << "ERROR: attempted to capture king in perft\n";
+            continue;
+        }
+        
+        
+        if (is_in_check(copy, !copy.white_to_move)) // if the move leaves the king in check, skip this move
+        {
+            cout << "ERROR: Move leaves king in check\n";
+            continue;
+        }
+
+        if (flag == EN_PASSANT)
+            en_passant++;
+
+        if (flag == CAPTURE)
+            captures++;
+
+        if (flag == KING_CASTLE || flag == QUEEN_CASTLE)
+            castles++;
+        
+        if (is_promotion_flag(flag))
+            promotions++;
+
         nodes += perft(copy, depth - 1); // recursively looks for moves until depth has been reached
     }
 
+    cout << "Depth: " << depth << " | Nodes: " << nodes
+         << " | En Passant: " << en_passant
+         << " | Captures: " << captures
+         << " | Castles: " << castles
+         << " | Promotions: " << promotions
+         << '\n';
     return nodes;
 }

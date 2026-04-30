@@ -1,13 +1,9 @@
 NOTES: 
-- rook needs to be moved in king_castles func
-- promotion handling needs attention
 
 TO DO:
-- passed pawn bitmask
-- knight move bitboards
-- straight bitboards
-- diagonal bitboards
-- magic bitboards? 
+- improve side attack mask updating
+    - pawns, kings, knights dont need updating unless they move
+- magic bitboards?
 
 
 movegen.cpp

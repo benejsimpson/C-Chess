@@ -1,8 +1,7 @@
 #include "core/utils.h"
 #include "core/fen.hpp"
 #include "core/board.hpp"
-
-const std::string START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
+#include "engine/zobrist.hpp"
 
 void load_fen(Board &board, const std::string &fen)
 {
@@ -13,11 +12,6 @@ void load_fen(Board &board, const std::string &fen)
     std::string castling = "-";
     std::string en_passant = "-";
 
-    // split FEN into parts
-    // 1 : piece placement
-    // 2 : side to move
-    // 3 : castling rights
-    // 4 : en passant
     std::size_t first_space = fen.find(' ');
     std::size_t second_space = std::string::npos;
     std::size_t third_space = std::string::npos;
@@ -41,7 +35,8 @@ void load_fen(Board &board, const std::string &fen)
 
         if (second_space != std::string::npos)
         {
-            std::size_t third_space = fen.find(' ', second_space + 1);
+            // IMPORTANT: no std::size_t here
+            third_space = fen.find(' ', second_space + 1);
 
             castling = fen.substr(
                 second_space + 1,
@@ -62,7 +57,7 @@ void load_fen(Board &board, const std::string &fen)
         }
     }
 
-                                                                        // load board pieces
+    // load board pieces
     int rank = 7;
     int file = 0;
 
@@ -82,12 +77,16 @@ void load_fen(Board &board, const std::string &fen)
         }
 
         if (rank < 0 || file > 7)
+        {
             break;
+        }
 
         const Piece piece = char_to_piece(c);
+
         if (piece != Empty)
         {
-            place_piece(board, rank * 8 + file, piece);
+            int square = rank * 8 + file;
+            place_piece(board, square, piece);
         }
 
         file++;
@@ -96,7 +95,7 @@ void load_fen(Board &board, const std::string &fen)
     // side to move
     board.white_to_move = (active_colour != "b");
 
-    // reset castling rights then enable whats in FEN
+    // reset castling rights
     board.white_king_side = false;
     board.white_queen_side = false;
     board.black_king_side = false;
@@ -116,6 +115,7 @@ void load_fen(Board &board, const std::string &fen)
                 board.black_queen_side = true;
         }
     }
+
     // en passant target square
     board.en_passant_square = -1;
 
@@ -123,6 +123,9 @@ void load_fen(Board &board, const std::string &fen)
     {
         board.en_passant_square = name_to_square(en_passant);
     }
+    update_attack_masks(board);
+    board.hash = generate_hash(board);
+    board.position_history.push_back(board.hash);
 }
 
 std::string export_fen(const Board &board)

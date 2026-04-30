@@ -1,10 +1,13 @@
 #include "core/makemove.hpp"
+#include "core/movegen.hpp"
 #include <iostream>
 
                                                             // Internal helpers
 
 static void remove_castling_rights_for_rook(Board& board, int square, Piece rook)
 {
+    const int old_casling_index = castling_index(board);
+
     // White rooks
     if (rook == WR)
     {
@@ -22,10 +25,20 @@ static void remove_castling_rights_for_rook(Board& board, int square, Piece rook
         else if (square == 63)
             board.black_king_side = false;
     }
+
+    const int new_castling_index = castling_index(board);
+    if (old_casling_index != new_castling_index)
+    {
+        // update hash for castling rights change
+        board.hash ^= ZOBRIST.castling_hashes[old_casling_index];
+        board.hash ^= ZOBRIST.castling_hashes[new_castling_index];
+    }
 }
 
 static void remove_castling_rights_for_king(Board& board, Piece king)
 {
+    const int old_casling_index = castling_index(board);
+    
     if (king == WK)
     {
         board.white_king_side = false;
@@ -36,13 +49,16 @@ static void remove_castling_rights_for_king(Board& board, Piece king)
         board.black_king_side = false;
         board.black_queen_side = false;
     }
+    
+    const int new_castling_index = castling_index(board);
+    if (old_casling_index != new_castling_index)
+    {
+        // update hash for castling rights change
+        board.hash ^= ZOBRIST.castling_hashes[old_casling_index];
+        board.hash ^= ZOBRIST.castling_hashes[new_castling_index];
+    }
 }
 
-static bool is_capture(const Board &board, Move move) // UNUSED
-{
-    return is_bit_set(all_occupancy(board), move_to(move)) ||
-           move_flag(move) == EN_PASSANT; // need to check en passant move flag as no piece on square
-}
 
                                                                     // Main move application
 
@@ -51,6 +67,7 @@ void apply_move(Board& board, Move move)
     const int from = move_from(move);
     const int to = move_to(move);
     const MoveFlag flag = static_cast<MoveFlag>(move_flag(move));
+    const int old_en_passant_square = board.en_passant_square;
 
     const Piece moved_piece = board.squares[from];
     const Piece captured_piece = board.squares[to];
@@ -62,8 +79,11 @@ void apply_move(Board& board, Move move)
         return;
     }
 
+                                                    // Castling rights updating
+
     // move removes possible en-passant
     // allow en-passant only when double pawn move
+    update_hash_for_en_passant(board, old_en_passant_square, -1);
     board.en_passant_square = -1;
 
     // Update castling rights before moving pieces
@@ -85,25 +105,45 @@ void apply_move(Board& board, Move move)
         remove_castling_rights_for_rook(board, to, captured_piece);
     }
 
-    // CAPTURE
+                                                    // CAPTURE
     if (captured_piece != Empty)
         remove_piece(board, to);
 
-                                                                    // Handle move by flag
+                                                    // Handle move by flag
 
     // en passant capture
     if (flag == EN_PASSANT)
     {
+        const int captured_square = to + (board.white_to_move ? -8 : 8);
+
         move_piece(board, from, to);
+
         // captured pawn is not on square moved to
         // adjust index to remove captured pawn
-        remove_piece(board, to + (board.white_to_move ? -8 : 8));
+        remove_piece(board, captured_square);
+
+        if (board.squares[captured_square] != Empty)
+        {
+            std::cout << "ERROR: EP pawn still in squares[] at "
+                    << captured_square << '\n';
+        }
+
+        if (is_bit_set(all_occupancy(board), captured_square))
+        {
+            std::cout << "ERROR: EP pawn still in bitboards at "
+                    << captured_square << '\n';
+        }
     }
 
     // king-side castle
     else if (flag == KING_CASTLE)
     {
+        // update hash for castling
+        update_hash_for_castling(board,move);
+
+        // move king
         move_piece(board, from, to);
+
         // move rook as well
         // white : 7 -> 5, black : 63 -> 61
         move_piece(board,
@@ -114,7 +154,12 @@ void apply_move(Board& board, Move move)
     // queen-side castle
     else if (flag == QUEEN_CASTLE)
     {
+        // update hash for castling
+        update_hash_for_castling(board,move);
+        
+        // move king
         move_piece(board, from, to);
+        
         // move rook as well
         // white : 0 -> 3, black : 56 -> 59
         move_piece(board,
@@ -137,17 +182,23 @@ void apply_move(Board& board, Move move)
 
         // If a pawn moved 2 squares, record the en passant target square
         if (flag == DOUBLE_PAWN)
+        {
             board.en_passant_square = from + (board.white_to_move ? 8 : -8);
+            update_hash_for_en_passant(board, -1, board.en_passant_square);
+        }
     }
 
     // change side to move
     board.white_to_move = !board.white_to_move;
-
+    board.hash ^= ZOBRIST.white_to_move_hash;
 
     // increment fullmove_number after black moves
     if (board.white_to_move)
     {
         board.fullmove_number++;
     }
+    // update board.[white/black]_attacks after each move is made
+    update_attack_masks(board);
+    board.hash = generate_hash(board);
 }
 

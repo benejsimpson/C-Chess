@@ -3,48 +3,10 @@
 #include "core/utils.h"
 #include "core/board.hpp"
 #include "core/fen.hpp"
+#include "engine/zobrist.hpp"
 #include <cctype>
 
 using namespace std;
-using bit8 = uint8_t;
-using bit64 = uint64_t;
-
-                                                                    // Board setup / utility
-
-void reset_board(Board &board)
-{
-    clear_board(board);
-    load_start_position(board);
-}
-
-void clear_board(Board &board)
-{
-    // set all squares to empty
-    for (int i = 0; i < 64; i++)
-    {
-        board.squares[i] = Empty;
-    }
-    // clear bitboards for each piece
-    for (int i = 0; i < 12; i++)
-    {
-        board.bitboards[i] = EMPTY_BB;
-    }
-
-    // reset side to move
-    board.white_to_move = true;
-
-    // clear castling rights
-    board.white_king_side = false;
-    board.white_queen_side = false;
-    board.black_king_side = false;
-    board.black_queen_side = false;
-
-    // set en-passant square = -1
-    board.en_passant_square = -1;
-
-    // reset move counter
-    board.fullmove_number = 1;
-}
 
                                                                     // Piece helpers
 
@@ -63,6 +25,9 @@ void place_piece(Board &board, int square, Piece piece)
     {
         set_bit(board.bitboards[bb_ind], square);
     }
+
+    // updates hash for placed piece
+    board.hash ^= ZOBRIST.piece_square_hashes[piece_to_bb_ind(piece)][square];
 }
 
 // removes a piece from a square
@@ -82,6 +47,9 @@ void remove_piece(Board &board, int square)
     clear_bit(
         board.bitboards[piece_to_bb_ind(piece)],
         square);
+
+    // updates hash for removed piece
+    board.hash ^= ZOBRIST.piece_square_hashes[piece_to_bb_ind(piece)][square];
 }
 
 // removes piece and places it in new position
@@ -156,18 +124,68 @@ inline BitB straight_attackers(const Board &board, bool white)
            board.bitboards[piece_to_bb_ind(white ? WQ : BQ)];
 }
 
-                                                                    // Position loading
+                                                                    // Hashing helpers
 
+
+
+
+                                                                    // Board setup / utility
+
+// clears the board and loads the starting position
+void reset_board(Board &board)
+{
+    clear_board(board);
+    load_start_position(board);
+}
+
+// clears the board of all pieces and resets all board state
+void clear_board(Board &board)
+{
+    // set all squares to empty
+    for (int i = 0; i < 64; i++)
+    {
+        board.squares[i] = Empty;
+    }
+    // clear bitboards for each piece
+    for (int i = 0; i < 12; i++)
+    {
+        board.bitboards[i] = EMPTY_BB;
+    }
+
+    // reset side to move
+    board.white_to_move = true;
+
+    // clear castling rights
+    board.white_king_side = false;
+    board.white_queen_side = false;
+    board.black_king_side = false;
+    board.black_queen_side = false;
+
+    // set en-passant square = -1
+    board.en_passant_square = -1;
+
+    // reset attack masks
+    board.white_attacks = 0;
+    board.black_attacks = 0;
+
+    // reset move counter
+    board.fullmove_number = 1;
+
+    // reset hashing state
+    board.hash = 0;
+    board.position_history.clear();
+}
+
+// loads a position from START_FEN string
 void load_start_position(Board &board)
 {
-    load_fen(board, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -");
+    load_fen(board, START_FEN);
     board.white_king_side = true;
     board.white_queen_side = true;
     board.black_king_side = true;
     board.black_queen_side = true;
+    update_attack_masks(board);
 }
-
-                                                                    // FEN helpers
 
 // converts Piece p -> char representation in FEN
 // white -> upper, black -> lower

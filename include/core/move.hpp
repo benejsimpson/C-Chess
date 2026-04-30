@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
-#include "utils.h"
-#include "board.hpp"
+#include "core/utils.h"
+#include "core/board.hpp"
 
 using Move = uint16_t;
 
@@ -71,20 +71,29 @@ inline bool is_promotion_flag(int flag)
     return flag >= N_PROMO && flag <= Q_PROMO;
 }
 
-inline bool is_castle(Move move)
+inline bool is_castle(const Move &move)
 {
     return move_flag(move) == KING_CASTLE ||
            move_flag(move) == QUEEN_CASTLE;
 }
 
-inline bool is_en_passant(Move move)
+inline bool is_en_passant(const Move &move)
 {
     return move_flag(move) == EN_PASSANT;
 }
 
+inline bool is_capture(const Board &board, const Move &move)
+{
+    const int flag = move_flag(move);
+
+    return flag == CAPTURE ||
+           flag == EN_PASSANT ||
+           board.squares[move_to(move)] != Empty;
+}
 
 
-                                                                    // Piece helper functions
+
+                                                                    // Move helper functions
 inline Piece promotion_piece_from_flag(MoveFlag flag, bool white)
 {
     switch (flag)
@@ -101,4 +110,40 @@ inline Piece promotion_piece_from_flag(MoveFlag flag, bool white)
     default:
         return Empty;
     }
+}
+
+inline std::string moveflag_to_string(MoveFlag flag)
+{
+    switch (flag)
+    {
+    case QUIET:
+        return "-";
+    case CAPTURE:
+        return "Capture";
+    case KING_CASTLE:
+        return "King Castle";
+    case QUEEN_CASTLE:
+        return "Queen Castle";
+    case DOUBLE_PAWN:
+        return "Double Pawn";
+    case EN_PASSANT:
+        return "En Passant";
+    case N_PROMO:
+        return "Promote Knight";
+    case B_PROMO:
+        return "Promote Bishop";
+    case R_PROMO:
+        return "Promote Rook";
+    case Q_PROMO:
+        return "Promote Queen";
+    default:
+        return "UNKNOWN FLAG";
+    }
+}
+
+inline void print_move(const Board &board, const Move &move)
+{
+    std::cout << piece_to_char(board.squares[move_from(move)]) << " " << square_to_name(move_from(move))
+              << " -> " << square_to_name(move_to(move)) << " " << piece_to_char(board.squares[move_to(move)])
+              << " | " << moveflag_to_string((MoveFlag)move_flag(move)) << '\n';
 }
