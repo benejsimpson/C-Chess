@@ -1,12 +1,13 @@
+*.exe
+*.dll
+
 # Output exe
 output/
 *.exe
 *.dll
 
 # Engine testing and version tracker
-src/tests/output/
-*.csv
-*.exe
+src/tests
 
 # Test files
 src/core/test.cpp
