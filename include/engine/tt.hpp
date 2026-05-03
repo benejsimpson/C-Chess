@@ -9,51 +9,50 @@ using BitEntry = uint64_t;
 
 enum TTFlag
 {
-    EXACT,          // exact score
-    LOWER_BOUND,    // score >= this (alpha cut-off)
-    UPPER_BOUND     // score <= this (beta cut-off)
+    EXACT,       // exact score
+    LOWER_BOUND, // score >= this (alpha cut-off)
+    UPPER_BOUND  // score <= this (beta cut-off)
 };
 
 struct TTEntry
 {
-    BitEntry key;   // 64-bit hash key
+    BitEntry key; // 64-bit hash key
     int depth;
     int score;
     uint8_t flag;
-    Move best_move;
+    Move bestMove;
 };
 
 static std::vector<TTEntry> TT;
 static size_t TT_SIZE = 0;
 
-void tt_clear()
+void ttClear()
 {
     for (size_t i = 0; i < TT_SIZE; ++i)
     {
-        TT[i].key = 0;      // 0 = empty slot
-        TT[i].depth = -1;   // invalid depth
+        TT[i].key = 0;    // 0 = empty slot
+        TT[i].depth = -1; // invalid depth
         TT[i].score = 0;
         TT[i].flag = 0;
-        TT[i].best_move = 0;
+        TT[i].bestMove = 0;
     }
 }
 
-void tt_init(size_t size)
+void ttInit(size_t size)
 {
     TT_SIZE = size;
     TT.resize(TT_SIZE);
 
-    tt_clear();
+    ttClear();
 }
 
-
-bool tt_probe(BitEntry key, TTEntry& out)
+bool ttProbe(BitEntry key, TTEntry &out)
 {
     if (TT_SIZE == 0)
         return false;
 
     size_t index = key % TT_SIZE;
-    const TTEntry& entry = TT[index];
+    const TTEntry &entry = TT[index];
 
     if (entry.depth >= 0 && entry.key == key)
     {
@@ -64,7 +63,7 @@ bool tt_probe(BitEntry key, TTEntry& out)
     return false;
 }
 
-void tt_store(BitEntry key, const TTEntry& entry)
+void ttStore(BitEntry key, const TTEntry &entry)
 {
     if (TT_SIZE == 0)
         return;

@@ -23,7 +23,6 @@
 #include "../core/fen.cpp"
 #include "../core/makemove.cpp"
 #include "../core/movegen.cpp"
-#include "../core/bitboard.cpp"
 
 #include "../gui/game.cpp"
 #include "../gui/input.cpp"
@@ -35,11 +34,10 @@
 #include "../engine/evaluate.cpp"
 #include "../engine/zobrist.cpp"
 
-
 int main()
 {
     init_zobrist();
-    tt_init(1 << 20);
+    ttInit(1 << 20);
 
     ChessGui app;
 

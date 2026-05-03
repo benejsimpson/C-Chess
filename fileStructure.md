@@ -9,12 +9,12 @@ FILE_A = mask of file 0 (a file)
 __Helpers__
 using BitB = uint64_t
 `BitB square_mask(sq)` : returns BitB with bit set at index sq
-`bool is_bit_set(BitB, sq)` : returns true if bit is set
+`bool isBitSet(BitB, sq)` : returns true if bit is set
 `void set_bit(BitB, sq)` : mutates BitB - sets a bit at ind sq
 `void clear_bit(BitB, sq)` : mutates BitB - unsets a bit at ind sq
 `int count_bits(BitB)` : returns number of bits set
-`int lsb_index(BitB)` : returns first index of set bit
-`int pop_lsb(BitB)` : removes first set bit and returns its index
+`int LsbIndex(BitB)` : returns first index of set bit
+`int popLSB(BitB)` : removes first set bit and returns its index
 `BitB [file / rank]_mask(rank)` : returns a mask of a [rank / file]
 `print_BitB(BitB)` : debugging
 
@@ -30,18 +30,18 @@ __Constants__
 START_FEN
 
 __Helpers__
-int file_rank_to_index(file,rank)
-int index_to_file
-int index_to_rank
-bool is_valid_index
-bool is_valid_file_rank
-int piece_to_bb_ind
-bool is_white
-bool is_black
-bool is_opponent
-Piece get_piece_type
+int fileRankToIndex(file,rank)
+int indexToFile
+int indexToRank
+bool isValidIndex
+bool isValidFileRank
+int pieceToBitboardIndex
+bool isWhitePiece
+bool isBlackPiece
+bool isOpponentPieces
+Piece getPieceType
 bool is_empty_square
-bool is_piece_on_board(Board, Piece) : checks if specific piece exists anywhere on board
+bool isPieceOnBoard(Board, Piece) : checks if specific piece exists anywhere on board
 bool is_piece_on_square(Board, Piece, sq) : checks if square has a specific piece on it
 
 ### board.cpp
@@ -49,13 +49,13 @@ _Include: board.hpp, fen.hpp_
 
 __Helpers__
 BitB [all / white / black]_occupancy(Board) : returns BitB of all squares occupied by [ ]
-int king_square(Board, white?) : returns index of white? king (-1 if not found)
+int getKingSquareIndex(Board, white?) : returns index of white? king (-1 if not found)
 BitB [ straight / diagonal]_attackers(Board, white?) : returns BitB of all squares that white? has Q | [B / R] on
 
 __Functions__
-void move_piece(Board, from, to)
-    void place_piece(Board, sq, Piece)
-    void remove_piece(Board, sq)
+void movePiece(Board, from, to)
+    void placePiece(Board, sq, Piece)
+    void removePiece(Board, sq)
 
 ## move
 ### move.hpp
@@ -77,38 +77,38 @@ enum MoveFlag : uint8
     QUIET, CAPTURE, [KING / QUEEN]_CASTLE, DOUBLE_PAWN, EN_PASSANT, [N / B / R / Q]_PROMO
 
 __Helpers__
-Move create_move(from, to, flag)
+Move createMove(from, to, flag)
 - takes int of square moved from/to and int flag
 - generates uint16 representation of move
-Piece promotion_piece_from_flag(flag, white?)
+Piece promotionPieceFromFlag(flag, white?)
 - takes MoveFlag and white?
 - returns Piece promoted to (WQ, BR, ...)
-bool is_promotion_flag(flag) : true if flag is a promotion
-bool is_capture(Board, move) : true if move is a capture
+bool isPromotionFlag(flag) : true if flag is a promotion
+bool isCapture(Board, move) : true if move is a capture
 bool is_castle(move) : true if move is a castle
 bool is_en_passant(move) : true if move is en passant
 int get_from(move) : gets int square moved from
 int get_to(move) : gets int square moved to
 int get_flag(move) : gets int MoveFlag
-void apply_move(board, move) : IN PROGRESS
+void applyMove(board, move) : IN PROGRESS
 
 ## makemove
 [what its for]
 ### makemove.hpp
 
 __Helpers__
-void apply_move(Board, Move)
+void applyMove(Board, Move)
 
 ### makemove.cpp
 _Include: makemove.hpp_
 
 __Functions__
-void apply_move(Board, Move) : main move application
+void applyMove(Board, Move) : main move application
 - updates en-passant possibility
 - updates castling rights
 
-void remove_castling_rights_for_rook(Board, Piece, sq) : removes castling right for colour and side moved
-void remove_castling_rights_for_king(Board, Piece) : removes castling right for colour
+void removeCastlingRightsForRook(Board, Piece, sq) : removes castling right for colour and side moved
+void removeCastlingRightsForKing(Board, Piece) : removes castling right for colour
 
 ## movegen
 ### movegen.hpp
@@ -118,21 +118,21 @@ __Constants__
 int [KNIGHT / KING / DIAGONAL / STRAIGHT]_MOVES[ ][2]
 
 __Helpers__
-int get_move_to_ind(ind moved from, change in file, change in rank)
+int getNextMoveIndex(ind moved from, change in file, change in rank)
 - takes index moved from, 
-bool is_in_check(Board, white?)
-bool is_checkmate(Board)
+bool isInCheck(Board, white?)
+bool isCheckmate(Board)
 
 
-MoveList generate_legal_moves(Board)
-    MoveList generate_pseudo_legal_moves(Board)
+MoveList generateLegalMoves(Board)
+    MoveList generatePseudoLegalMoves(Board)
         void generate_[ piece ]_moves(Board, MoveList)
 
-MoveList generate_legal_moves_for_square(Board, sq)
+MoveList generateLegalMovesForSquare(Board, sq)
 bool king_can_castle_[king / queen]side(Board, white?)
 bool squares_between_king_and_rook_clear
     vec.int squares_to_check_between_king_and_rook
-bool same_move(Move a, Move b)
+bool sameMove(Move a, Move b)
 
 
 ## fen

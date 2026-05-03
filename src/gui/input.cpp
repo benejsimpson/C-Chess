@@ -10,7 +10,7 @@ namespace
     bool is_side_to_move_piece(const Game &game, Piece piece)
     {
         return piece != Empty &&
-               ((game.white_to_move() && is_white(piece)) || (!game.white_to_move() && is_black(piece)));
+               ((game.whiteToMove() && isWhitePiece(piece)) || (!game.whiteToMove() && isBlackPiece(piece)));
     }
 
     void clear_selection(GuiState &gui)
@@ -30,8 +30,8 @@ namespace
         const float popup_width = square_size * 4.f;
         const float popup_height = square_size;
 
-        int file = index_to_file(move_to(gui.pending_promotion_move));
-        int rank = index_to_rank(move_to(gui.pending_promotion_move));
+        int file = indexToFile(moveTo(gui.pending_promotion_move));
+        int rank = indexToRank(moveTo(gui.pending_promotion_move));
         int draw_file = gui.board_flipped ? 7 - file : file;
         int draw_rank = gui.board_flipped ? rank : 7 - rank;
 
@@ -197,7 +197,7 @@ void InputHandler::handle_mouse_press(
     {
         gui.flip_every_turn = !gui.flip_every_turn;
         if (gui.flip_every_turn)
-            gui.board_flipped = !game.white_to_move();
+            gui.board_flipped = !game.whiteToMove();
         clear_selection(gui);
         return;
     }
@@ -211,7 +211,7 @@ void InputHandler::handle_mouse_press(
     if (is_mouse_over_button(load_fen_button, mouse_pos))
     {
         const std::string fen = gui.fen_input.empty() ? fen_box.text : gui.fen_input;
-        if (game.load_position_from_fen(fen))
+        if (game.loadPositionFromFen(fen))
         {
             clear_selection(gui);
             gui.show_promotion_popup = false;
@@ -256,7 +256,7 @@ void InputHandler::handle_mouse_press(
         {
             Move move = gui.selected_moves.moves[i];
 
-            if (move_to(move) == square)
+            if (moveTo(move) == square)
             {
                 try_click_move(game, gui, square);
                 return;
@@ -264,7 +264,7 @@ void InputHandler::handle_mouse_press(
         }
     }
 
-    const Piece piece = game.get_board().squares[square];
+    const Piece piece = game.getBoard().squares[square];
     if (is_side_to_move_piece(game, piece))
     {
         select_square(game, gui, square);
@@ -361,13 +361,12 @@ bool InputHandler::handle_promotion_popup_click(sf::Vector2f mouse_pos, sf::Rend
 
     Move old_move = gui.pending_promotion_move;
 
-    Move move = create_move(
-        move_from(old_move),
-        move_to(old_move),
-        promotion_flag_for_index(index)
-    );
+    Move move = createMove(
+        moveFrom(old_move),
+        moveTo(old_move),
+        promotion_flag_for_index(index));
 
-    if (game.try_make_move(move))
+    if (game.tryMakeMove(move))
     {
         gui.show_promotion_popup = false;
         clear_selection(gui);
@@ -391,19 +390,19 @@ int InputHandler::mouse_to_square(sf::Vector2f mouse_pos, sf::Vector2u window_si
 
     const int file = board_flipped ? 7 - draw_file : draw_file;
     const int rank = board_flipped ? draw_rank : 7 - draw_rank;
-    return file_rank_to_index(file, rank);
+    return fileRankToIndex(file, rank);
 }
 
 void InputHandler::select_square(Game &game, GuiState &gui, int square)
 {
     clear_selection(gui);
 
-    const Piece piece = game.get_board().squares[square];
+    const Piece piece = game.getBoard().squares[square];
     if (!is_side_to_move_piece(game, piece))
         return;
 
     gui.selected_square = square;
-    gui.selected_moves = game.get_legal_moves_for_square(square);
+    gui.selected_moves = game.getLegalMovesForSquare(square);
     gui.drag_from_square = square;
     gui.dragged_piece = piece;
 }
@@ -416,7 +415,7 @@ void InputHandler::try_click_move(Game &game, GuiState &gui, int target_square)
     {
         Move move = gui.selected_moves.moves[i];
 
-        if (move_to(move) == target_square)
+        if (moveTo(move) == target_square)
         {
             matching_moves.add(move);
         }
@@ -430,7 +429,7 @@ void InputHandler::try_click_move(Game &game, GuiState &gui, int target_square)
 
     Move first_move = matching_moves.moves[0];
 
-    if (is_promotion_flag(move_flag(first_move)))
+    if (isPromotionFlag(moveFlag(first_move)))
     {
         gui.show_promotion_popup = true;
         gui.pending_promotion_move = first_move;
@@ -438,7 +437,7 @@ void InputHandler::try_click_move(Game &game, GuiState &gui, int target_square)
         return;
     }
 
-    if (game.try_make_move(first_move))
+    if (game.tryMakeMove(first_move))
     {
         gui.show_promotion_popup = false;
         clear_selection(gui);

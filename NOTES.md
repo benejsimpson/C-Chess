@@ -7,7 +7,7 @@ TO DO:
 
 
 movegen.cpp
-OLD : moves.push_back(create_move(from, to, piece, captured))
+OLD : moves.push_back(createMove(from, to, piece, captured))
 NEW : moves.push_back(make_move(from, to))
 
 SPECIAL MOVES:
@@ -24,11 +24,11 @@ PROMO:
 
 
 makemove.cpp
-void apply_move(Board& board, Move move)
+void applyMove(Board& board, Move move)
 {
-    const int from = move_from(move);
-    const int to = move_to(move);
-    const MoveFlag flag = move_flag(move);
+    const int from = moveFrom(move);
+    const int to = moveTo(move);
+    const MoveFlag flag = moveFlag(move);
 
     const Piece moving_piece = board.squares[from];
 
@@ -36,7 +36,7 @@ void apply_move(Board& board, Move move)
 
     if (flag == EN_PASSANT)
     {
-        const int captured_pawn_square = board.white_to_move ? to - 8 : to + 8;
+        const int captured_pawn_square = board.whiteToMove ? to - 8 : to + 8;
         board.squares[captured_pawn_square] = Empty;
     }
 
@@ -72,12 +72,12 @@ void apply_move(Board& board, Move move)
     }
     else if (is_promotion(move))
     {
-        board.squares[to] = promoted_piece(flag, board.white_to_move);
+        board.squares[to] = promoted_piece(flag, board.whiteToMove);
     }
     else
     {
         board.squares[to] = moving_piece;
     }
 
-    board.white_to_move = !board.white_to_move;
+    board.whiteToMove = !board.whiteToMove;
 }

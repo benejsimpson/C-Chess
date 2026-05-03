@@ -14,23 +14,23 @@ private:
 public:
     Game();
 
-    const Board& get_board() const;
+    const Board &getBoard() const;
 
-    MoveList get_legal_moves() const;
-    MoveList get_legal_moves_for_square(int square) const;
+    MoveList getLegalMoves() const;
+    MoveList getLegalMovesForSquare(int square) const;
 
-    bool try_make_move(const Move& move);
+    bool tryMakeMove(const Move &move);
 
-    void reset_to_start();
-    bool load_position_from_fen(const std::string& fen);
+    void resetToStart();
+    bool loadPositionFromFen(const std::string &fen);
     std::string get_fen() const;
 
-    bool white_to_move() const;
-    bool is_check() const;
-    std::string get_status_text() const;
+    bool whiteToMove() const;
+    bool isCheck() const;
+    std::string getStatusText() const;
 
-    bool has_last_move() const;
-    Move get_last_move() const;
+    bool hasLastMove() const;
+    Move getLastMove() const;
 
     bool make_ai_move(int depth);
 };

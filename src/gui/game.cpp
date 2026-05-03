@@ -5,22 +5,17 @@
 #include "core/makemove.hpp"
 #include "engine/evaluate.hpp"
 
-namespace
-{
-constexpr const char* kStartFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq";
-}
-
 bool Game::make_ai_move(int depth)
 {
-    MoveList moves = get_legal_moves();
+    MoveList moves = getLegalMoves();
 
     if (moves.empty())
         return false;
 
-    Move best_move = find_best_move(board, depth);
+    Move bestMove = findBestMove(board, depth);
 
-    apply_move(board, best_move);
-    last_move = best_move;
+    applyMove(board, bestMove);
+    last_move = bestMove;
     last_move_exists = true;
 
     return true;
@@ -28,32 +23,32 @@ bool Game::make_ai_move(int depth)
 
 Game::Game()
 {
-    reset_to_start();
+    resetToStart();
 }
 
-const Board& Game::get_board() const
+const Board &Game::getBoard() const
 {
     return board;
 }
 
-MoveList Game::get_legal_moves() const
+MoveList Game::getLegalMoves() const
 {
-    return generate_legal_moves(board);
+    return generateLegalMoves(board);
 }
 
-MoveList Game::get_legal_moves_for_square(int square) const
+MoveList Game::getLegalMovesForSquare(int square) const
 {
-    return generate_legal_moves_for_square(board, square);
+    return generateLegalMovesForSquare(board, square);
 }
 
-bool Game::try_make_move(const Move& move)
+bool Game::tryMakeMove(const Move &move)
 {
-    for (const Move& legal_move : get_legal_moves())
+    for (const Move &legal_move : getLegalMoves())
     {
-        if (!same_move(legal_move, move))
+        if (!sameMove(legal_move, move))
             continue;
 
-        apply_move(board, legal_move);
+        applyMove(board, legal_move);
         last_move = legal_move;
         last_move_exists = true;
         return true;
@@ -62,58 +57,58 @@ bool Game::try_make_move(const Move& move)
     return false;
 }
 
-void Game::reset_to_start()
+void Game::resetToStart()
 {
-    load_position_from_fen(kStartFen);
+    loadPositionFromFen(START_FEN);
 }
 
-bool Game::load_position_from_fen(const std::string& fen)
+bool Game::loadPositionFromFen(const std::string &fen)
 {
-    load_fen(board, fen);
+    loadFEN(board, fen);
     last_move_exists = false;
     return true;
 }
 
 std::string Game::get_fen() const
 {
-    return export_fen(board);
+    return exportFEN(board);
 }
 
-bool Game::white_to_move() const
+bool Game::whiteToMove() const
 {
-    return board.white_to_move;
+    return board.whiteToMove;
 }
 
-bool Game::is_check() const
+bool Game::isCheck() const
 {
-    return is_in_check(board, board.white_to_move);
+    return isInCheck(board, board.whiteToMove);
 }
 
-std::string Game::get_status_text() const
+std::string Game::getStatusText() const
 {
-    const bool white_turn = board.white_to_move;
-    MoveList legal_moves = get_legal_moves();
+    const bool whiteTurn = board.whiteToMove;
+    MoveList legalMoves = getLegalMoves();
 
-    if (legal_moves.empty())
+    if (legalMoves.empty())
     {
-        if (is_check())
-            return white_turn ? "Checkmate: Black wins" : "Checkmate: White wins";
+        if (isCheck())
+            return whiteTurn ? "Checkmate: Black wins" : "Checkmate: White wins";
 
         return "Stalemate";
     }
 
-    if (is_check())
-        return white_turn ? "White to move - check" : "Black to move - check";
+    if (isCheck())
+        return whiteTurn ? "White to move - check" : "Black to move - check";
 
-    return white_turn ? "White to move" : "Black to move";
+    return whiteTurn ? "White to move" : "Black to move";
 }
 
-bool Game::has_last_move() const
+bool Game::hasLastMove() const
 {
     return last_move_exists;
 }
 
-Move Game::get_last_move() const
+Move Game::getLastMove() const
 {
     return last_move;
 }

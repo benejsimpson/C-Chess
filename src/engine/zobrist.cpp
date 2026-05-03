@@ -4,7 +4,7 @@
 
 Zobrist ZOBRIST;
 
-static Hash random_hash()
+static Hash randomHash()
 {
     static std::mt19937_64 rng(123456789);
     return rng();
@@ -16,106 +16,86 @@ void init_zobrist()
     {
         for (int square = 0; square < 64; ++square)
         {
-            ZOBRIST.piece_square_hashes[piece][square] = random_hash();
+            ZOBRIST.pieceSquareHashes[piece][square] = randomHash();
         }
     }
 
-    ZOBRIST.white_to_move_hash = random_hash();
+    ZOBRIST.whiteToMoveHash = randomHash();
 
     for (int i = 0; i < 16; ++i)
     {
-        ZOBRIST.castling_hashes[i] = random_hash();
+        ZOBRIST.castlingHashes[i] = randomHash();
     }
 
     for (int file = 0; file < 8; ++file)
     {
-        ZOBRIST.en_passant_file_hashes[file] = random_hash();
+        ZOBRIST.enPassantFileHashes[file] = randomHash();
     }
 }
 
 // returns hash generated from current board position
-Hash generate_hash(const Board &board)
+Hash generateHash(const Board &board)
 {
     Hash hash = 0;
-    BitB all_occup = all_occupancy(board);
+    BitB allOccup = allOccupancyBB(board);
 
     // pieces
-    while (all_occup != 0)
+    while (allOccup != 0)
     {
-        const int sq = pop_lsb(all_occup);
+        const int sq = popLSB(allOccup);
         Piece piece = board.squares[sq];
 
-        hash ^= ZOBRIST.piece_square_hashes[piece_to_bb_ind(piece)][sq];
+        hash ^= ZOBRIST.pieceSquareHashes[pieceToBitboardIndex(piece)][sq];
     }
 
     // side to move
-    if (board.white_to_move)
-        hash ^= ZOBRIST.white_to_move_hash;
+    if (board.whiteToMove)
+        hash ^= ZOBRIST.whiteToMoveHash;
 
     // castling rights
-    hash ^= ZOBRIST.castling_hashes[castling_index(board)];
+    hash ^= ZOBRIST.castlingHashes[castlingIndex(board)];
 
     // en passant
-    if (board.en_passant_square != -1)
+    if (board.enPassantSquare != -1)
     {
-        int file = index_to_file(board.en_passant_square);
-        hash ^= ZOBRIST.en_passant_file_hashes[file];
+        int file = indexToFile(board.enPassantSquare);
+        hash ^= ZOBRIST.enPassantFileHashes[file];
     }
     return hash;
 }
 
-void update_hash_for_moved_piece(Board &board,const Move &move)
+// if castling rights change between moves, replace the old castling index with the new one
+void updateCastlingHash(Board &board, int oldCastleIndex, int newCastleIndex)
 {
-    const int from = move_from(move);
-    const int to = move_to(move);
-    const bool capture = is_capture(board, move);
-
-    // remove moved piece from old square
-    board.hash ^= ZOBRIST.piece_square_hashes[piece_to_bb_ind(board.squares[from])][from];
-
-    // add piece moved to new square
-    board.hash ^= ZOBRIST.piece_square_hashes[piece_to_bb_ind(board.squares[to])][to];
-
-    // remove captured piece
-    if (capture)
-    {
-        board.hash ^= ZOBRIST.piece_square_hashes[piece_to_bb_ind(board.squares[to])][to];
-    }
-
-    // flip side to move
-    board.hash ^= ZOBRIST.white_to_move_hash;
-}
-
-void update_hash_for_castling(Board &board, const Move &move)
-{
-    if (!is_castle(move))
+    if (oldCastleIndex == newCastleIndex)
         return;
 
     // flip castling rights
-    board.hash ^= ZOBRIST.castling_hashes[castling_index(board)];
+    board.hash ^= ZOBRIST.castlingHashes[oldCastleIndex];
+    board.hash ^= ZOBRIST.castlingHashes[newCastleIndex];
 }
 
-void update_hash_for_en_passant(Board &board, int old_ep_square, int new_ep_square)
+void updateEnPassantHash(Board &board, int oldEpSquare, int newEpSquare)
 {
-    if (old_ep_square != -1)
+    if (oldEpSquare != -1)
     {
-        const int old_file = index_to_file(old_ep_square);
-        board.hash ^= ZOBRIST.en_passant_file_hashes[old_file];
+        const int oldFile = indexToFile(oldEpSquare);
+        board.hash ^= ZOBRIST.enPassantFileHashes[oldFile];
     }
 
-    if (new_ep_square != -1)
+    if (newEpSquare != -1)
     {
-        const int new_file = index_to_file(new_ep_square);
-        board.hash ^= ZOBRIST.en_passant_file_hashes[new_file];
+        const int newFile = indexToFile(newEpSquare);
+        board.hash ^= ZOBRIST.enPassantFileHashes[newFile];
     }
 }
 
-int count_repetitions(const std::vector<Hash> &history, Hash current_hash)
+int countRepetitions(const std::vector<Hash> &history, Hash currentHash)
 {
     int count = 0;
     for (const Hash &hash : history)
     {
-        if (hash == current_hash)
+        if (hash == currentHash)
             ++count;
     }
     return count;

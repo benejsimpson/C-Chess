@@ -18,7 +18,6 @@
 #include "../engine/evaluate.cpp"
 #include "../engine/zobrist.cpp"
 #include "../engine/perft.cpp"
-#include "../core/bitboard.cpp"
 #include "../tests/version_csv_writer.cpp"
 #include "../tests/perft_debug.cpp"
 
@@ -30,7 +29,6 @@ void kiwipete_depth_n(int depth);
 void eval_to_csv();
 void engine_tests(string fen, int depth);
 
-
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 //             MAIN
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -38,7 +36,7 @@ void engine_tests(string fen, int depth);
 int main()
 {
     init_zobrist();
-    tt_init(1 << 20);
+    ttInit(1 << 20);
     run_perft_debug(KIWIPETE, 4);
     return 0;
 }
@@ -86,8 +84,6 @@ int main()
         8/5k2/8/5N2/5Q2/2K5/8/8 w - - 0 1           perft 4 = 23527
 */
 
-
-
 void print_perft_result(const Board &board, int depth)
 {
     const std::uint64_t actual = perft(board, depth); // result from perft algorithm
@@ -98,9 +94,9 @@ void print_perft_result(const Board &board, int depth)
 void perft_depth_n_starting_position(int depth) // passed!
 {
     Board board;
-    load_start_position(board);
+    loadStartPosition(board);
 
-    std::cout << "Perft Depth : "<< depth << '\n';
+    std::cout << "Perft Depth : " << depth << '\n';
 
     for (int i = 1; i <= depth; i++)
     {
@@ -111,7 +107,7 @@ void perft_depth_n_starting_position(int depth) // passed!
 void kiwipete_depth_n(int depth) // passed!
 {
     Board board;
-    load_fen(board, KIWIPETE);
+    loadFEN(board, KIWIPETE);
     for (int i = 1; i <= depth; i++)
     {
         print_perft_result(board, i);
@@ -129,15 +125,13 @@ void eval_to_csv()
     std::cout << "Failed to write eval results to src/tests/output/Evals.csv\n";
 }
 
-
-
 void engine_tests(string fen, int depth)
 {
     Board board;
-    load_fen(board, fen);
+    loadFEN(board, fen);
 
-    std::cout << "Perft Depth : "<< depth << '\n';
-    std::cout << "FEN : "<< fen << '\n';
+    std::cout << "Perft Depth : " << depth << '\n';
+    std::cout << "FEN : " << fen << '\n';
 
     for (int i = 1; i <= depth; i++)
     {

@@ -268,8 +268,8 @@ void Renderer::draw_board(sf::RenderWindow &window, const GuiState &gui)
 
     for (int square = 0; square < 64; square++)
     {
-        int file = index_to_file(square);
-        int rank = index_to_rank(square);
+        int file = indexToFile(square);
+        int rank = indexToRank(square);
 
         sf::Vector2f pos = square_to_screen(square, gui.board_flipped, square_size);
 
@@ -288,10 +288,10 @@ void Renderer::draw_board(sf::RenderWindow &window, const GuiState &gui)
 
 void Renderer::draw_last_move(sf::RenderWindow &window, const Game &game, const GuiState &gui)
 {
-    if (!game.has_last_move())
+    if (!game.hasLastMove())
         return;
 
-    Move last = game.get_last_move();
+    Move last = game.getLastMove();
 
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
@@ -300,7 +300,7 @@ void Renderer::draw_last_move(sf::RenderWindow &window, const Game &game, const 
 
     sf::Color highlight(246, 246, 105, 90);
 
-    int squares[2] = {move_from(last), move_to(last)};
+    int squares[2] = {moveFrom(last), moveTo(last)};
 
     for (int sq : squares)
     {
@@ -346,7 +346,7 @@ void Renderer::draw_legal_moves(sf::RenderWindow &window, const GuiState &gui)
 
     for (const Move &move : gui.selected_moves)
     {
-        sf::Vector2f pos = square_to_screen(move_to(move), gui.board_flipped, square_size);
+        sf::Vector2f pos = square_to_screen(moveTo(move), gui.board_flipped, square_size);
 
         sf::CircleShape dot(square_size * 0.12f);
         dot.setFillColor(sf::Color(30, 30, 30, 140));
@@ -360,12 +360,12 @@ void Renderer::draw_legal_moves(sf::RenderWindow &window, const GuiState &gui)
 
 void Renderer::draw_check_highlight(sf::RenderWindow &window, const Game &game, const GuiState &gui)
 {
-    if (!game.is_check())
+    if (!game.isCheck())
         return;
 
-    const Board &board = game.get_board();
-    const int king_square = find_checked_king_square(board, game.white_to_move());
-    if (king_square == -1)
+    const Board &board = game.getBoard();
+    const int getKingSquareIndex = find_checked_king_square(board, game.whiteToMove());
+    if (getKingSquareIndex == -1)
         return;
 
     const LayoutMetrics layout = compute_layout(window.getSize());
@@ -373,7 +373,7 @@ void Renderer::draw_check_highlight(sf::RenderWindow &window, const Game &game, 
     const float board_left = layout.board_left;
     const float board_top = layout.board_top;
 
-    sf::Vector2f pos = square_to_screen(king_square, gui.board_flipped, square_size);
+    sf::Vector2f pos = square_to_screen(getKingSquareIndex, gui.board_flipped, square_size);
 
     sf::RectangleShape rect;
     rect.setPosition(sf::Vector2f(board_left + pos.x, board_top + pos.y));
@@ -391,7 +391,7 @@ void Renderer::draw_pieces(
     const GuiState &gui,
     const TextureManager &textures)
 {
-    const Board &board = game.get_board();
+    const Board &board = game.getBoard();
 
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
@@ -409,7 +409,7 @@ void Renderer::draw_pieces(
         if (gui.dragging && square == gui.drag_from_square)
             continue;
 
-        const sf::Texture &texture = textures.get_piece_texture(piece);
+        const sf::Texture &texture = textures.getPieceTexture(piece);
 
         sf::Sprite sprite(texture);
 
@@ -439,7 +439,7 @@ void Renderer::draw_dragged_piece(
     if (gui.dragged_piece == Empty)
         return;
 
-    const sf::Texture &texture = textures.get_piece_texture(gui.dragged_piece);
+    const sf::Texture &texture = textures.getPieceTexture(gui.dragged_piece);
     sf::Sprite sprite(texture);
 
     sf::Vector2u tex_size = texture.getSize();
@@ -526,7 +526,7 @@ void Renderer::draw_promotion_popup(
     const float popup_width = square_size * 4.f;
     const float popup_height = square_size;
 
-    const int target_square = move_to(gui.pending_promotion_move);
+    const int target_square = moveTo(gui.pending_promotion_move);
     const sf::Vector2f target_pos = square_to_screen(target_square, gui.board_flipped, square_size);
     float x = layout.board_left + target_pos.x - square_size * 1.5f;
     float y = layout.board_top + target_pos.y;
@@ -548,7 +548,7 @@ void Renderer::draw_promotion_popup(
 
     Piece options[4];
 
-    const bool white_promotion = index_to_rank(target_square) == 7;
+    const bool white_promotion = indexToRank(target_square) == 7;
 
     if (white_promotion)
     {
@@ -567,7 +567,7 @@ void Renderer::draw_promotion_popup(
 
     for (int i = 0; i < 4; i++)
     {
-        const sf::Texture &texture = textures.get_piece_texture(options[i]);
+        const sf::Texture &texture = textures.getPieceTexture(options[i]);
         sf::Sprite sprite(texture);
 
         sf::Vector2u tex_size = texture.getSize();
@@ -613,8 +613,8 @@ void Renderer::draw_illegal_flash(sf::RenderWindow &window, const GuiState &gui)
 
 sf::Vector2f Renderer::square_to_screen(int square, bool board_flipped, float square_size) const
 {
-    int file = index_to_file(square);
-    int rank = index_to_rank(square);
+    int file = indexToFile(square);
+    int rank = indexToRank(square);
 
     int draw_file = file;
     int draw_rank = 7 - rank;

@@ -6,30 +6,29 @@
 namespace
 {
 
-bool is_ai_turn(const Game& game, const GuiState& gui)
-{
-    if (gui.game_mode == GameMode::WhiteAI && game.white_to_move())
-        return true;
+    bool is_ai_turn(const Game &game, const GuiState &gui)
+    {
+        if (gui.game_mode == GameMode::WhiteAI && game.whiteToMove())
+            return true;
 
-    if (gui.game_mode == GameMode::BlackAI && !game.white_to_move())
-        return true;
+        if (gui.game_mode == GameMode::BlackAI && !game.whiteToMove())
+            return true;
 
-    return false;
-}
+        return false;
+    }
 
-const std::array<const char*, 3> kFontCandidates = {
-    "assets/DejaVuSans.ttf",
-    "C:/Windows/Fonts/segoeui.ttf",
-    "C:/Windows/Fonts/arial.ttf"
-};
+    const std::array<const char *, 3> kFontCandidates = {
+        "assets/DejaVuSans.ttf",
+        "C:/Windows/Fonts/segoeui.ttf",
+        "C:/Windows/Fonts/arial.ttf"};
 
-void sync_board_orientation(const Game& game, GuiState& gui)
-{
-    if (!gui.flip_every_turn)
-        return;
+    void sync_board_orientation(const Game &game, GuiState &gui)
+    {
+        if (!gui.flip_every_turn)
+            return;
 
-    gui.board_flipped = !game.white_to_move();
-}
+        gui.board_flipped = !game.whiteToMove();
+    }
 }
 
 ChessGui::ChessGui()
@@ -42,12 +41,11 @@ bool ChessGui::init()
     window.create(
         sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}),
         "Chess++ - Benjamin Simpson",
-        sf::Style::Default
-    );
+        sf::Style::Default);
     window.setFramerateLimit(60);
 
     bool font_loaded = false;
-    for (const char* path : kFontCandidates)
+    for (const char *path : kFontCandidates)
     {
         if (font.openFromFile(path))
         {
@@ -59,12 +57,12 @@ bool ChessGui::init()
     if (!font_loaded)
         return false;
 
-    if (!textures.load_piece_textures())
+    if (!textures.loadPieceTextures())
         return false;
 
-    textures.load_widget_textures();
+    textures.loadWidgetTextures();
 
-    game.reset_to_start();
+    game.resetToStart();
     gui = GuiState{};
     sync_board_orientation(game, gui);
     update_layout();
@@ -79,12 +77,11 @@ void ChessGui::run()
     {
         while (auto event = window.pollEvent())
         {
-            if (const auto* resized = event->getIf<sf::Event::Resized>())
+            if (const auto *resized = event->getIf<sf::Event::Resized>())
             {
                 window.setView(sf::View(sf::FloatRect(
                     {0.f, 0.f},
-                    {static_cast<float>(resized->size.x), static_cast<float>(resized->size.y)}
-                )));
+                    {static_cast<float>(resized->size.x), static_cast<float>(resized->size.y)})));
                 update_layout();
             }
 
@@ -100,8 +97,7 @@ void ChessGui::run()
                 two_player_button,
                 white_ai_button,
                 black_ai_button,
-                fen_box
-            );
+                fen_box);
         }
 
         const float dt = clock.restart().asSeconds();
@@ -129,8 +125,7 @@ void ChessGui::run()
             two_player_button,
             white_ai_button,
             black_ai_button,
-            fen_box
-        );
+            fen_box);
     }
 }
 
@@ -163,32 +158,27 @@ void ChessGui::update_layout()
 
     flip_button.bounds = sf::FloatRect(
         {layout.panel_left, layout.panel_top},
-        {icon_size, icon_size}
-    );
-    flip_button.icon_texture = textures.get_widget_texture(WidgetTextureId::FlipBoard);
+        {icon_size, icon_size});
+    flip_button.icon_texture = textures.getWidgetTexture(WidgetTextureId::FlipBoard);
 
     auto_flip_button.bounds = sf::FloatRect(
         {layout.panel_left + icon_size + button_gap, layout.panel_top},
-        {icon_size, icon_size}
-    );
-    auto_flip_button.icon_texture = textures.get_widget_texture(WidgetTextureId::FlipBoardAuto);
+        {icon_size, icon_size});
+    auto_flip_button.icon_texture = textures.getWidgetTexture(WidgetTextureId::FlipBoardAuto);
 
     const float text_button_top = layout.panel_top + icon_size + std::max(14.f, layout.padding);
 
     copy_fen_button.bounds = sf::FloatRect(
         {layout.panel_left, text_button_top},
-        {full_button_width, button_height}
-    );
+        {full_button_width, button_height});
 
     fen_box.bounds = sf::FloatRect(
         {layout.panel_left, copy_fen_button.bounds.position.y + button_height + std::max(12.f, layout.padding * 0.8f)},
-        {full_button_width, button_height * 3.f}
-    );
+        {full_button_width, button_height * 3.f});
 
     load_fen_button.bounds = sf::FloatRect(
         {layout.panel_left, fen_box.bounds.position.y + fen_box.bounds.size.y + std::max(12.f, layout.padding * 0.8f)},
-        {full_button_width, button_height}
-    );
+        {full_button_width, button_height});
 
     const float mode_gap = std::max(12.f, layout.padding * 0.8f);
 
@@ -196,20 +186,17 @@ void ChessGui::update_layout()
 
     two_player_button.bounds = sf::FloatRect(
         {layout.panel_left, y},
-        {full_button_width, button_height}
-    );
+        {full_button_width, button_height});
 
     y += button_height + mode_gap;
 
     white_ai_button.bounds = sf::FloatRect(
         {layout.panel_left, y},
-        {full_button_width, button_height}
-    );
+        {full_button_width, button_height});
 
     y += button_height + mode_gap;
 
     black_ai_button.bounds = sf::FloatRect(
         {layout.panel_left, y},
-        {full_button_width, button_height}
-    );
+        {full_button_width, button_height});
 }

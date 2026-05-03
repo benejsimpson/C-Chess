@@ -11,4 +11,4 @@
 // - en passant square
 // - castling rights
 // - fullmove number
-void apply_move(Board& board, Move move);
+void applyMove(Board &board, Move move);

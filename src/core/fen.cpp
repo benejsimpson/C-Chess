@@ -1,11 +1,11 @@
-#include "core/utils.h"
+#include "core/utils.hpp"
 #include "core/fen.hpp"
 #include "core/board.hpp"
 #include "engine/zobrist.hpp"
 
-void load_fen(Board &board, const std::string &fen)
+void loadFEN(Board &board, const std::string &fen)
 {
-    clear_board(board);
+    clearBoard(board);
 
     std::string placement = "";
     std::string active_colour = "w";
@@ -81,65 +81,65 @@ void load_fen(Board &board, const std::string &fen)
             break;
         }
 
-        const Piece piece = char_to_piece(c);
+        const Piece piece = charToPiece(c);
 
         if (piece != Empty)
         {
             int square = rank * 8 + file;
-            place_piece(board, square, piece);
+            placePiece(board, square, piece);
         }
 
         file++;
     }
 
     // side to move
-    board.white_to_move = (active_colour != "b");
+    board.whiteToMove = (active_colour != "b");
 
     // reset castling rights
-    board.white_king_side = false;
-    board.white_queen_side = false;
-    board.black_king_side = false;
-    board.black_queen_side = false;
+    board.whiteCanKsCastle = false;
+    board.whiteCanQsCastle = false;
+    board.blackCanKsCastle = false;
+    board.blackCanQsCastle = false;
 
     if (castling != "-")
     {
         for (char c : castling)
         {
             if (c == 'K')
-                board.white_king_side = true;
+                board.whiteCanKsCastle = true;
             else if (c == 'Q')
-                board.white_queen_side = true;
+                board.whiteCanQsCastle = true;
             else if (c == 'k')
-                board.black_king_side = true;
+                board.blackCanKsCastle = true;
             else if (c == 'q')
-                board.black_queen_side = true;
+                board.blackCanQsCastle = true;
         }
     }
 
     // en passant target square
-    board.en_passant_square = -1;
+    board.enPassantSquare = -1;
 
     if (en_passant != "-")
     {
-        board.en_passant_square = name_to_square(en_passant);
+        board.enPassantSquare = nameToSquare(en_passant);
     }
-    update_attack_masks(board);
-    board.hash = generate_hash(board);
-    board.position_history.push_back(board.hash);
+    updateAttackMasks(board);
+    board.hash = generateHash(board);
+    board.positionHistory.push_back(board.hash);
 }
 
-std::string export_fen(const Board &board)
+std::string exportFEN(const Board &board)
 {
     std::string fen;
 
-                                                                        // piece placement
+    // piece placement
     for (int rank = 7; rank >= 0; rank--)
     {
         int empty_count = 0;
 
         for (int file = 0; file < 8; file++)
         {
-            const Piece piece = board.squares[file_rank_to_index(file, rank)];
+            const Piece piece = board.squares[fileRankToIndex(file, rank)];
 
             if (piece == Empty)
             {
@@ -153,7 +153,7 @@ std::string export_fen(const Board &board)
                 empty_count = 0;
             }
 
-            fen += piece_to_char(piece);
+            fen += pieceToChar(piece);
         }
 
         if (empty_count > 0)
@@ -168,18 +168,18 @@ std::string export_fen(const Board &board)
     }
 
     // side to move
-    fen += board.white_to_move ? " w " : " b ";
+    fen += board.whiteToMove ? " w " : " b ";
 
     // castling rights
     std::string castling;
 
-    if (board.white_king_side)
+    if (board.whiteCanKsCastle)
         castling += 'K';
-    if (board.white_queen_side)
+    if (board.whiteCanQsCastle)
         castling += 'Q';
-    if (board.black_king_side)
+    if (board.blackCanKsCastle)
         castling += 'k';
-    if (board.black_queen_side)
+    if (board.blackCanQsCastle)
         castling += 'q';
 
     if (castling.empty())
@@ -190,10 +190,10 @@ std::string export_fen(const Board &board)
     // en passant target square
     fen += " ";
 
-    if (board.en_passant_square == -1)
+    if (board.enPassantSquare == -1)
         fen += "-";
     else
-        fen += square_to_name(board.en_passant_square);
+        fen += squareToName(board.enPassantSquare);
 
     return fen;
 }

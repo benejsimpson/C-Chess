@@ -1,5 +1,5 @@
 #pragma once
-#include "utils.h"
+#include "utils.hpp"
 #include "move.hpp"
 #include "board.hpp"
 #include "movegen.hpp"
@@ -12,4 +12,4 @@ void init_window();
 // run main loop
 void run_ui(Board &board);
 
-MoveList generate_legal_moves_for_square(const Board &board, int square);
+MoveList generateLegalMovesForSquare(const Board &board, int square);
