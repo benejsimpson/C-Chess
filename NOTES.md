@@ -24,7 +24,7 @@ PROMO:
 
 
 makemove.cpp
-void applyMove(Board& board, Move move)
+void makeMove(Board& board, Move move)
 {
     const int from = moveFrom(move);
     const int to = moveTo(move);

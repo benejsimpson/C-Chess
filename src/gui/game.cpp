@@ -7,6 +7,7 @@
 
 bool Game::make_ai_move(int depth)
 {
+    Undo undo;
     MoveList moves = getLegalMoves();
 
     if (moves.empty())
@@ -14,7 +15,7 @@ bool Game::make_ai_move(int depth)
 
     Move bestMove = findBestMove(board, depth);
 
-    applyMove(board, bestMove);
+    makeMove(board, bestMove,undo);
     last_move = bestMove;
     last_move_exists = true;
 
@@ -45,10 +46,11 @@ bool Game::tryMakeMove(const Move &move)
 {
     for (const Move &legal_move : getLegalMoves())
     {
+        Undo undo;
         if (!sameMove(legal_move, move))
             continue;
 
-        applyMove(board, legal_move);
+        makeMove(board, legal_move,undo);
         last_move = legal_move;
         last_move_exists = true;
         return true;

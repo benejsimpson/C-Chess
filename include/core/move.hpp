@@ -115,7 +115,7 @@ inline Piece promotionPieceFromFlag(MoveFlag flag, bool white)
     }
 }
 
-inline std::string moveflag_to_string(MoveFlag flag)
+inline std::string moveFlagToString(MoveFlag flag)
 {
     switch (flag)
     {
@@ -144,9 +144,9 @@ inline std::string moveflag_to_string(MoveFlag flag)
     }
 }
 
-inline void print_move(const Board &board, const Move &move)
+inline void printMove(const Board &board, const Move &move)
 {
     std::cout << pieceToChar(board.squares[moveFrom(move)]) << " " << squareToName(moveFrom(move))
               << " -> " << squareToName(moveTo(move)) << " " << pieceToChar(board.squares[moveTo(move)])
-              << " | " << moveflag_to_string((MoveFlag)moveFlag(move)) << '\n';
+              << " | " << moveFlagToString((MoveFlag)moveFlag(move)) << '\n';
 }

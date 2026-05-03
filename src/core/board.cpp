@@ -8,7 +8,7 @@
 
 using namespace std;
 
-// Piece helpers
+//--------------------- Piece helpers
 
 // put a piece on a square
 // updates board.squares[] and piece's bitboard
@@ -71,7 +71,7 @@ void movePiece(Board &board, int from, int to)
     placePiece(board, to, piece);
 }
 
-// Bitboard helpers
+//--------------------- Bitboard helpers
 
 // returns bb of all squares occupied by white
 inline BitB whiteOccupancyBB(const Board &board)
@@ -122,7 +122,7 @@ inline BitB straightAttackersBB(const Board &board, bool white)
            board.pieceBBs[pieceToBitboardIndex(white ? WQ : BQ)];
 }
 
-// Board setup / utility
+//--------------------- Board setup / utility
 
 // clears the board and loads the starting position
 void resetBoard(Board &board)

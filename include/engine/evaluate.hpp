@@ -16,17 +16,27 @@
 #include <vector>
 #include <array>
 
+//--------------------- Material & PSQT Evaluation
+
 inline int evaluate(const Board &board);
-
-Move findBestMove(Board board, int depth);
-
-int minimax(Board board, int depth, int alpha, int beta);
 inline int psqtScore(const Board &board);
 inline int evaluateMaterial(const Board &board);
 
+//--------------------- MiniMax & Search
+
+int search(Board board, int depth);
+int minimax(Board board, int depth, int alpha, int beta);
+Move findBestMove(Board board, int depth);
+
+//--------------------- Dynamic Depth
+
+int depthBonus(const Board &board);
+
+//--------------------- Helpers
+
+// returns square index when horizontally inverted
+// changes perspective between white & black
 inline int mirrorSquare(int square)
 {
     return square ^ 56;
 }
-
-int search(Board board, int depth);

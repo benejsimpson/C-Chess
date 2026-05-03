@@ -5,6 +5,8 @@
 #include <cmath>
 #include <array>
 
+//--------------------- Material & PSQT Evaluation
+
 inline int evaluate(const Board &board)
 {
     if (isCheckmate(const_cast<Board &>(board)))
@@ -20,7 +22,7 @@ inline int evaluateMaterial(const Board &board)
     for (int i = 0; i < 5; i++)
     {
         eval +=
-            (count_bits(board.pieceBBs[W_BB[i]]) - count_bits(board.pieceBBs[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
+            (countBits(board.pieceBBs[W_BB[i]]) - countBits(board.pieceBBs[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
     }
     return eval;
 }
@@ -33,11 +35,11 @@ inline int psqtScore(const Board &board)
     int eval = 0;
 
     // get PSQT for piece types relative to phase of game
-    const PSQT w_pawns_psqt = pawn_PSQT_for_phase(board, true);
-    const PSQT b_pawns_psqt = pawn_PSQT_for_phase(board, false);
-    const PSQT w_king_psqt = king_PSQT_for_phase(board, true);
-    const PSQT b_king_psqt = king_PSQT_for_phase(board, false);
-    const PSQT_Set pieces_psqt = piece_PSQT_for_phase(board);
+    const PSQT w_pawns_psqt = pawnPSQTForPhase(board, true);
+    const PSQT b_pawns_psqt = pawnPSQTForPhase(board, false);
+    const PSQT w_king_psqt = kingPSQTForPhase(board, true);
+    const PSQT b_king_psqt = kingPSQTForPhase(board, false);
+    const PSQT_Set pieces_psqt = piecePSQTForPhase(board);
 
     // copies of pawn bitboards
     BitB w_pawns = board.pieceBBs[pieceToBitboardIndex(WP)];
@@ -87,8 +89,9 @@ inline int psqtScore(const Board &board)
     return eval;
 }
 
-Move findBestMove(Board board, int depth)
+Move findBestMove(Board board, int baseDepth)
 {
+    int depth = baseDepth + depthBonus(board);
     MoveList moves = generateLegalMoves(board);
 
     // No legal moves: checkmate or stalemate
@@ -105,10 +108,12 @@ Move findBestMove(Board board, int depth)
 
     for (Move move : moves)
     {
-        Board copy = board;
-        applyMove(copy, move);
+        Undo undo;
+        makeMove(board, move, undo);
 
-        int score = minimax(copy, depth - 1, -INF, INF);
+        int score = minimax(board, depth - 1, -INF, INF);
+
+        undoMove(board, move, undo);
 
         if (board.whiteToMove && score > bestScore)
         {
@@ -125,7 +130,8 @@ Move findBestMove(Board board, int depth)
     return bestMove;
 }
 
-// MINIMAX ALGORITHM
+//--------------------- MiniMax & Search
+
 // init with a = -inf, b = inf
 int minimax(Board board, int depth, int alpha, int beta)
 {
@@ -183,10 +189,12 @@ int minimax(Board board, int depth, int alpha, int beta)
 
         for (Move move : moves)
         {
-            Board copy = board;
-            applyMove(copy, move);
+            Undo undo;
+            makeMove(board, move,undo);
 
-            int eval = minimax(copy, depth - 1, alpha, beta);
+            int eval = minimax(board, depth - 1, alpha, beta);
+
+            undoMove(board, move, undo);
 
             if (eval > bestScore)
             {
@@ -207,10 +215,12 @@ int minimax(Board board, int depth, int alpha, int beta)
 
         for (Move move : moves)
         {
-            Board copy = board;
-            applyMove(copy, move);
+            Undo undo;
+            makeMove(board, move,undo);
 
-            int eval = minimax(copy, depth - 1, alpha, beta);
+            int eval = minimax(board, depth - 1, alpha, beta);
+
+            undoMove(board, move, undo);
 
             if (eval < bestScore)
             {
@@ -273,10 +283,12 @@ int search(Board board, int depth)
 
     for (Move move : moves)
     {
-        Board copy = board;
-        applyMove(copy, move);
+        Undo undo;
+        makeMove(board, move,undo);
 
-        int score = search(copy, depth - 1);
+        int score = search(board, depth - 1);
+
+        undoMove(board, move, undo);
 
         if (board.whiteToMove)
             best = std::max(best, score);
@@ -284,4 +296,32 @@ int search(Board board, int depth)
             best = std::min(best, score);
     }
     return best;
+}
+
+//--------------------- Dynamic Depth Searching
+
+int depthBonus(const Board &board)
+{
+    const int numPieces = countPiecesOnBoard(board);
+
+    if (numPieces == 0)
+        return 5;
+    if (numPieces <= 4)
+        return 2;
+    else if (numPieces <= 8)
+        return 1;
+    return 0;
+}
+
+//--------------------- Quiescence
+/*
+    When depth limit reached, engine returns eval but there may be obvious tactical moves
+    e.g. queen captures piece at depth = 0 -> eval = +5, but opponent can recapture next move -> eval = -4
+    Instead, this will continue to evaluate positions with obvious tactical continuations, until no forcing moves remain
+    Quiet position -> evaluate, Tactical position -> continue searching
+*/
+
+int quiescence(Board &board, int alpha, int beta)
+{
+    return 0;
 }

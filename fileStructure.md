@@ -12,7 +12,7 @@ using BitB = uint64_t
 `bool isBitSet(BitB, sq)` : returns true if bit is set
 `void set_bit(BitB, sq)` : mutates BitB - sets a bit at ind sq
 `void clear_bit(BitB, sq)` : mutates BitB - unsets a bit at ind sq
-`int count_bits(BitB)` : returns number of bits set
+`int countBits(BitB)` : returns number of bits set
 `int LsbIndex(BitB)` : returns first index of set bit
 `int popLSB(BitB)` : removes first set bit and returns its index
 `BitB [file / rank]_mask(rank)` : returns a mask of a [rank / file]
@@ -90,20 +90,20 @@ bool is_en_passant(move) : true if move is en passant
 int get_from(move) : gets int square moved from
 int get_to(move) : gets int square moved to
 int get_flag(move) : gets int MoveFlag
-void applyMove(board, move) : IN PROGRESS
+void makeMove(board, move) : IN PROGRESS
 
 ## makemove
 [what its for]
 ### makemove.hpp
 
 __Helpers__
-void applyMove(Board, Move)
+void makeMove(Board, Move)
 
 ### makemove.cpp
 _Include: makemove.hpp_
 
 __Functions__
-void applyMove(Board, Move) : main move application
+void makeMove(Board, Move) : main move application
 - updates en-passant possibility
 - updates castling rights
 

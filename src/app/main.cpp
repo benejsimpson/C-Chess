@@ -18,6 +18,7 @@
 #include "engine/evaluate.hpp"
 #include "engine/tt.hpp"
 #include "engine/zobrist.hpp"
+#include "engine/move_scoring.hpp"
 
 #include "../core/board.cpp"
 #include "../core/fen.cpp"

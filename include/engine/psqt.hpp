@@ -7,21 +7,21 @@
 
 // returns bitboard of [white/black] pieces on the board
 // includes N B R Q but not pawns or king
-inline const BitB pieces_on_board(const Board &board, const bool white)
+inline const BitB piecesOnBoard(const Board &board, const bool white)
 {
     if (white)
     {
-        return  board.pieceBBs[WHITE_BB_INDS[1]] |   // N
-                board.pieceBBs[WHITE_BB_INDS[2]] |   // B
-                board.pieceBBs[WHITE_BB_INDS[3]] |   // R
-                board.pieceBBs[WHITE_BB_INDS[4]];    // Q
+        return board.pieceBBs[WHITE_BB_INDS[1]] | // N
+               board.pieceBBs[WHITE_BB_INDS[2]] | // B
+               board.pieceBBs[WHITE_BB_INDS[3]] | // R
+               board.pieceBBs[WHITE_BB_INDS[4]];  // Q
     }
     else
     {
-        return  board.pieceBBs[BLACK_BB_INDS[1]] |   // N
-                board.pieceBBs[BLACK_BB_INDS[2]] |   // B
-                board.pieceBBs[BLACK_BB_INDS[3]] |   // R
-                board.pieceBBs[BLACK_BB_INDS[4]];    // Q
+        return board.pieceBBs[BLACK_BB_INDS[1]] | // N
+               board.pieceBBs[BLACK_BB_INDS[2]] | // B
+               board.pieceBBs[BLACK_BB_INDS[3]] | // R
+               board.pieceBBs[BLACK_BB_INDS[4]];  // Q
     }
 }
 
@@ -45,18 +45,18 @@ enum PSQT_Phase
 
 // returns number of pieces on the board
 // includes N B R Q but not pawns or king
-inline const int count_pieces_on_board(const Board &board)
+inline const int countPiecesOnBoard(const Board &board)
 {
-    return count_bits(pieces_on_board(board, true) | pieces_on_board(board, false));
+    return countBits(piecesOnBoard(board, true) | piecesOnBoard(board, false));
 }
 
 // returns the PSQT for all PAWNS for each phase of the game and castling position
-inline PSQT pawn_PSQT_for_phase (const Board &board, bool white)
+inline PSQT pawnPSQTForPhase(const Board &board, bool white)
 {
-    const BitB white_pawns = board.pieceBBs[pieceToBitboardIndex(WP)];
-    const BitB black_pawns = board.pieceBBs[pieceToBitboardIndex(BP)];
+    const BitB whitePawns = board.pieceBBs[pieceToBitboardIndex(WP)];
+    const BitB blackPawns = board.pieceBBs[pieceToBitboardIndex(BP)];
 
-    if (count_pieces_on_board(board) <4)
+    if (countPiecesOnBoard(board) < 4)
         return ENDGAME_PAWNS_PSQT;
 
     if (white)
@@ -85,16 +85,16 @@ inline PSQT pawn_PSQT_for_phase (const Board &board, bool white)
 }
 
 // returns the PSQT for all PIECES (N, B, R, Q) for each phase of the game
-inline PSQT_Set piece_PSQT_for_phase (const Board &board)
+inline PSQT_Set piecePSQTForPhase(const Board &board)
 {
-    const int num_pieces = count_pieces_on_board(board);
+    const int numPieces = countPiecesOnBoard(board);
 
-    if (num_pieces >= 11) // opening pieces psqt
+    if (numPieces >= 11) // opening pieces psqt
     {
         return OPENING_PIECES_PSQT;
     }
 
-    if (num_pieces >= 4 && num_pieces <= 10) // middle game pieces psqt
+    if (numPieces >= 4 && numPieces <= 10) // middle game pieces psqt
     {
         return MIDDLEGAME_PIECES_PSQT;
     }
@@ -106,11 +106,11 @@ inline PSQT_Set piece_PSQT_for_phase (const Board &board)
 }
 
 // returns the PSQT for KING for each phase of the game and castling position
-inline PSQT king_PSQT_for_phase (const Board &board, bool white)
+inline PSQT kingPSQTForPhase(const Board &board, bool white)
 {
-    const int num_pieces = count_pieces_on_board(board);
+    const int numPieces = countPiecesOnBoard(board);
 
-    if (num_pieces < 4) // end game king psqt
+    if (numPieces < 4) // end game king psqt
     {
         return ENDGAME_KING_PSQT;
     }

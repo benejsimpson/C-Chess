@@ -2,7 +2,7 @@
 #include "core/movegen.hpp"
 #include <iostream>
 
-// Internal helpers
+//--------------------- Internal helpers
 
 static void removeCastlingRightsForRook(Board &board, int square, Piece rook)
 {
@@ -49,10 +49,13 @@ static void removeCastlingRightsForKing(Board &board, Piece king)
     updateCastlingHash(board, oldCastlingIndex, newCastlingIndex);
 }
 
-// Main move application
+//--------------------- Move Making & Undoing
 
-void applyMove(Board &board, Move move)
+void makeMove(Board &board, Move move, Undo &undo)
 {
+    // store current board position before move is made
+    updateUndoMove(board, move, undo);
+
     const int from = moveFrom(move);
     const int to = moveTo(move);
     const MoveFlag flag = static_cast<MoveFlag>(moveFlag(move));
@@ -101,19 +104,8 @@ void applyMove(Board &board, Move move)
 
         // captured pawn is not on square moved to
         // adjust index to remove captured pawn
+        undo.capturedPiece = board.squares[capturedSquare];
         removePiece(board, capturedSquare);
-
-        if (board.squares[capturedSquare] != Empty)
-        {
-            std::cout << "ERROR: EP pawn still in squares[] at "
-                      << capturedSquare << '\n';
-        }
-
-        if (isBitSet(allOccupancyBB(board), capturedSquare))
-        {
-            std::cout << "ERROR: EP pawn still in bitboards at "
-                      << capturedSquare << '\n';
-        }
     }
 
     // king-side castle
@@ -193,4 +185,111 @@ void applyMove(Board &board, Move move)
         std::cout << "castle index: " << castlingIndex(board) << '\n';
         std::cout << "ep square: " << board.enPassantSquare << '\n';
     }
+}
+
+// gets the data from current board position before a move is made and stores it for easy undo
+void updateUndoMove(Board &board, Move move, Undo &undo)
+{
+    const int from = moveFrom(move);
+    const int to = moveTo(move);
+    const int flag = moveFlag(move);
+
+    const Piece movedPiece = board.squares[from];
+
+    if (flag == EN_PASSANT)
+    {
+        undo.capturedPiece = board.squares[board.whiteToMove ? to - 8 : to + 8];
+    }
+    else
+    {
+        undo.capturedPiece = board.squares[to];
+    }
+    
+    undo.enPassantSquare = board.enPassantSquare;
+
+    undo.whiteCanKsCastle = board.whiteCanKsCastle;
+    undo.whiteCanQsCastle = board.whiteCanQsCastle;
+    undo.blackCanKsCastle = board.blackCanKsCastle;
+    undo.blackCanQsCastle = board.blackCanQsCastle;
+
+    undo.fullmoveNumber = board.fullmoveNumber;
+
+    undo.hash = board.hash;
+}
+
+// gets the data from current undo position and updates the board position when undoing a move
+void updateBoardMove(Board &board, Move move, const Undo &undo)
+{
+    board.enPassantSquare = undo.enPassantSquare;
+
+    board.whiteCanKsCastle = undo.whiteCanKsCastle;
+    board.whiteCanQsCastle = undo.whiteCanQsCastle;
+    board.blackCanKsCastle = undo.blackCanKsCastle;
+    board.blackCanQsCastle = undo.blackCanQsCastle;
+
+    board.fullmoveNumber = undo.fullmoveNumber;
+
+    board.hash = undo.hash;
+}
+
+void undoMove(Board &board, Move move, const Undo &undo)
+{
+    const int from = moveFrom(move);
+    const int to = moveTo(move);
+    const int flag = moveFlag(move);
+
+    Piece movedPiece = board.squares[to];
+
+    // restore side to move
+    board.whiteToMove = !board.whiteToMove;
+
+    // undo promotion
+    if (isPromotionFlag(flag))
+    {
+        movedPiece = board.whiteToMove ? WP : BP;
+    }
+
+    removePiece(board, to);
+    placePiece(board, from, movedPiece);
+
+    // restore captured piece
+    if (flag == EN_PASSANT)
+    {
+        const int capturedSquare = board.whiteToMove ? to - 8 : to + 8;
+        placePiece(board, capturedSquare, undo.capturedPiece);
+    }
+
+    else if (undo.capturedPiece != Empty)
+    {
+        placePiece(board, to, undo.capturedPiece);
+    }
+
+    // undo rook move for castling
+    if (flag == KING_CASTLE)
+    {
+        if (board.whiteToMove)
+        {
+            removePiece(board,5);
+            placePiece(board, 7, WR);
+        }
+        else
+        {
+            removePiece(board, 61);
+            placePiece(board, 63, BR);
+        }
+    }
+    else if (flag == QUEEN_CASTLE)
+    {
+        if (board.whiteToMove)
+        {
+            removePiece(board,3);
+            placePiece(board, 0, WR);
+        }
+        else
+        {
+            removePiece(board, 59);
+            placePiece(board, 56, BR);
+        }
+    }
+    updateBoardMove(board, move, undo);
 }

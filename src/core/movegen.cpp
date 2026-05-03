@@ -25,7 +25,7 @@ static constexpr BitB BLACK_KINGSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 60 | 1ULL
 // bitmask of squares that must not be attacked for black to castle queenside
 static constexpr BitB BLACK_QUEENSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 58 | 1ULL << 59 | 1ULL << 60;
 
-// Internal helpers
+//--------------------- Internal helpers
 
 static void generatePawnMoves(const Board &board, MoveList &moves, int square);
 static void generateKnightMoves(const Board &board, MoveList &moves, int square);
@@ -33,6 +33,7 @@ static void generateBishopMoves(const Board &board, MoveList &moves, int square)
 static void generateRookMoves(const Board &board, MoveList &moves, int square);
 static void generateQueenMoves(const Board &board, MoveList &moves, int square);
 static void generateKingMoves(const Board &board, MoveList &moves, int square);
+static void generateKingCastles(const Board &board, MoveList &moves, int from);
 
 static bool isSquareAttackedByPawn(const Board &board, int square, bool by_white);
 static bool isSquareAttackedByKnight(const Board &board, int square, bool by_white);
@@ -48,7 +49,7 @@ static bool isLegalPositionAfterMove(const Board &board, const Move &move);
 
 static BitB capturableOpponentOccupancy(const Board &board, bool white);
 
-// Move generation
+//--------------------- Move generation
 
 MoveList generateLegalMoves(const Board &board)
 {
@@ -117,14 +118,15 @@ MoveList generatePseudoLegalMoves(const Board &board)
     return moves;
 }
 
+// generates all legal moves, iterates through them, returns MoveList of moves from [square]
 MoveList generateLegalMovesForSquare(const Board &board, const int square)
 {
     MoveList moves;
-    MoveList all_moves = generateLegalMoves(board);
+    MoveList allMoves = generateLegalMoves(board);
 
-    for (int i = 0; i < all_moves.count; ++i)
+    for (int i = 0; i < allMoves.count; ++i)
     {
-        Move move = all_moves.moves[i];
+        Move move = allMoves.moves[i];
 
         if (moveFrom(move) == square)
         {
@@ -137,16 +139,17 @@ MoveList generateLegalMovesForSquare(const Board &board, const int square)
 
 static bool isLegalPositionAfterMove(const Board &board, const Move &move)
 {
+    Undo undo;
     Board copy = board;
 
-    bool sideThatMoved = copy.whiteToMove;
+    bool sideThatMoved = board.whiteToMove;
 
-    applyMove(copy, move);
+    makeMove(copy, move, undo);
 
     return !isInCheck(copy, sideThatMoved);
 }
 
-// Piece move generation helpers
+//--------------------- Piece move generation helpers
 
 static void quietMove(const int from, const int to, MoveList &moves)
 {
@@ -176,12 +179,12 @@ static void generatePawnMoves(const Board &board, MoveList &moves, int from)
     const BitB captureOccup = capturableOpponentOccupancy(board, white);
 
     const int oneForward = from + direction;
-    const bool promotion_rank = rank == (white ? 6 : 1);
+    const bool promotionRank = rank == (white ? 6 : 1);
 
     // Forward move
     if (isValidIndex(oneForward) && !isBitSet(allOccup, oneForward))
     {
-        if (promotion_rank)
+        if (promotionRank)
         {
             generatePawnPromotions(from, oneForward, moves);
         }
@@ -212,7 +215,7 @@ static void generatePawnMoves(const Board &board, MoveList &moves, int from)
         }
         else if (isBitSet(captureOccup, to))
         {
-            if (promotion_rank)
+            if (promotionRank)
             {
                 generatePawnPromotions(from, to, moves);
             }
@@ -354,7 +357,7 @@ static void generateKingMoves(const Board &board, MoveList &moves, int from)
     generateKingCastles(board, moves, from);
 }
 
-// check / attack helpers
+//--------------------- Check / Attack Helpers
 
 inline bool isSquareAttackedByPawn(const Board &board, int square, bool by_white)
 {
@@ -365,9 +368,7 @@ inline bool isSquareAttackedByPawn(const Board &board, int square, bool by_white
 inline bool isSquareAttackedByKnight(const Board &board, int square, bool by_white)
 {
     return (
-        (KNIGHT_ATTACKS[square]
-            & board.pieceBBs[pieceToBitboardIndex(by_white ? WN : BN)])
-            != EMPTY_BB);
+        (KNIGHT_ATTACKS[square] & board.pieceBBs[pieceToBitboardIndex(by_white ? WN : BN)]) != EMPTY_BB);
 }
 
 inline bool isSquareAttackedByDiagonal(const Board &board, int square, bool by_white)
@@ -440,14 +441,9 @@ inline bool isSquareAttackedByKing(const Board &board, int square, bool by_white
                KING_ATTACKS[square] & board.pieceBBs[pieceToBitboardIndex(by_white ? WK : BK)]) != EMPTY_BB;
 }
 
-inline bool isInCheck(const Board &board, bool white_king)
+bool isInCheck(const Board &board, bool white_king)
 {
     int kingSquare = getKingSquareIndex(board, white_king);
-    if (kingSquare == -1)
-    {
-        cout << "ERROR: isInCheck returned getKingSquareIndex = -1\n";
-        return true;
-    }
 
     if (white_king)
         return isSquareAttacked(board, kingSquare, false);
@@ -548,7 +544,7 @@ static void generateKingCastles(const Board &board, MoveList &moves, int from)
     }
 }
 
-// other helpers
+//--------------------- Other Helpers
 
 // generates bitboard of all squares [white] attacks - stores in board.[white/black]_attacks
 // used for move generation and check detection

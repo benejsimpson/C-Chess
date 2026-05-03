@@ -34,11 +34,9 @@ MoveList generateLegalMovesForSquare(const Board &board, const int square);
 
 //--------------------- Move Legality & Check Detection
 
-inline bool isInCheck(const Board &board, bool white_king);
+bool isInCheck(const Board &board, bool white_king);
 
 inline bool isCheckmate(Board &board);
-
-static void generateKingCastles(const Board &board, MoveList &moves, int from);
 
 inline bool sameMove(const Move &a, const Move &b);
 

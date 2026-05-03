@@ -8,6 +8,7 @@ using namespace std;
 
 uint64_t perft(const Board &board, int depth)
 {
+    Undo undo;
     if (depth == 0)
         return 1;
 
@@ -37,8 +38,8 @@ uint64_t perft(const Board &board, int depth)
         const MoveFlag flag =
             static_cast<MoveFlag>(moveFlag(move));
 
-        Board copy = board;    // create a copy of the board starting position
-        applyMove(copy, move); // applies the next move to the copy of the board
+        Board copy = board;   // create a copy of the board starting position
+        makeMove(copy, move,undo); // applies the next move to the copy of the board
 
         if (capturedPiece == 'k' || capturedPiece == 'K')
         {

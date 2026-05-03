@@ -65,7 +65,7 @@ constexpr void clear_bit(BitB &bb, int square)
 //--------------------- Counting / Scanning
 
 // counts the number of set bits in ULL
-inline const int count_bits(BitB bb)
+inline const int countBits(BitB bb)
 {
     return __builtin_popcountll(bb);
 }
