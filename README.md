@@ -6,13 +6,12 @@ My second C++ project - Using bitboards to make a chess game with AI opponent!
 This project is still in-progress. The codebase already supports:
 
 - Fully functional chess game for 2 player or AI opponent
-- Minimax search with alpha-beta pruning
 - FEN loading and exporting
-- A playable SFML board UI with drag-and-drop
+- A SFML board UI with drag-and-drop pieces
 
-## Architecture Overview
-Code split into three main layers:
-
-1. Core chess game logic
-3. Evaluation & Engine
-2. GUI
+Engine Features:
+- Move scoring and ordering
+- Minimax search with alpha-beta pruning
+- Material evaluation
+- Position evaluation with Piece Square Tables for different phases of game
+- Quiescence - in progress...
