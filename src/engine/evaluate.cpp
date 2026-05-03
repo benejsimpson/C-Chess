@@ -1,168 +1,327 @@
 #include "engine/evaluate.hpp"
-#include <cmath>
+#include "engine/tt.hpp"
+#include "engine/psqt.hpp"
 
-using namespace std;
+#include <cmath>
+#include <array>
+
+//--------------------- Material & PSQT Evaluation
 
 inline int evaluate(const Board &board)
 {
-    return evaluate_material(board) + psqt_score(board);
+    if (isCheckmate(const_cast<Board &>(board)))
+        return board.whiteToMove ? -INF : INF;
+
+    return psqtScore(board);
 }
 
-inline int evaluate_material(const Board &board)
+inline int evaluateMaterial(const Board &board)
 {
     int eval = 0;
 
     for (int i = 0; i < 5; i++)
     {
         eval +=
-            (count_bits(board.bitboards[W_BB[i]]) - count_bits(board.bitboards[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
+            (countBits(board.pieceBBs[W_BB[i]]) - countBits(board.pieceBBs[B_BB[i]])) * PIECE_MATERIAL_SCORE[i];
     }
     return eval;
 }
 
-inline int psqt_score(const Board &board)
+// combines piece scoring and ptsq scoring
+// updates arrays for sections of game (opening, middle, end)
+// updates ptsq for castling
+inline int psqtScore(const Board &board)
 {
     int eval = 0;
 
-    // loop through each piece type
-    for (int i = 0; i < 6; i++)
+    // get PSQT for piece types relative to phase of game
+    const PSQT w_pawns_psqt = pawnPSQTForPhase(board, true);
+    const PSQT b_pawns_psqt = pawnPSQTForPhase(board, false);
+    const PSQT w_king_psqt = kingPSQTForPhase(board, true);
+    const PSQT b_king_psqt = kingPSQTForPhase(board, false);
+    const PSQT_Set pieces_psqt = piecePSQTForPhase(board);
+
+    // copies of pawn bitboards
+    BitB w_pawns = board.pieceBBs[pieceToBitboardIndex(WP)];
+    BitB b_pawns = board.pieceBBs[pieceToBitboardIndex(BP)];
+
+    // loop through white piece bitboards, add material score and PSQT value
+    std::array<BitB, 4> w_pieces = {
+        board.pieceBBs[pieceToBitboardIndex(WN)],
+        board.pieceBBs[pieceToBitboardIndex(WB)],
+        board.pieceBBs[pieceToBitboardIndex(WR)],
+        board.pieceBBs[pieceToBitboardIndex(WQ)]};
+
+    std::array<BitB, 4> b_pieces = {
+        board.pieceBBs[pieceToBitboardIndex(BN)],
+        board.pieceBBs[pieceToBitboardIndex(BB)],
+        board.pieceBBs[pieceToBitboardIndex(BR)],
+        board.pieceBBs[pieceToBitboardIndex(BQ)]};
+
+    BitB w_king_pos = LsbIndex(board.pieceBBs[pieceToBitboardIndex(WK)]);
+    BitB b_king_pos = LsbIndex(board.pieceBBs[pieceToBitboardIndex(BK)]);
+
+    eval += (w_king_psqt[w_king_pos] - b_king_psqt[b_king_pos]);
+
+    while (w_pawns != 0)
     {
-        // copy of white piece bitboard
-        BitB w_copy = board.bitboards[WHITE_BB_INDS[i]];
+        eval += PIECE_MATERIAL_SCORE[0] + w_pawns_psqt[popLSB(w_pawns)];
+    }
+    while (b_pawns != 0)
+    {
+        eval -= PIECE_MATERIAL_SCORE[0] + b_pawns_psqt[popLSB(b_pawns)];
+    }
 
-        while (w_copy != 0)
+    for (int i = 0; i < 4; ++i)
+    {
+        BitB wPiece = w_pieces[i];
+        BitB b_piece = b_pieces[i];
+
+        while (wPiece != 0)
         {
-            // add piece square value for piece to eval
-            eval += ALL_PSQT[i][pop_lsb(w_copy)];
+            eval += PIECE_MATERIAL_SCORE[i + 1] + pieces_psqt[i][popLSB(wPiece)];
         }
-
-        // copy of black piece bitboard
-        BitB b_copy = board.bitboards[BLACK_BB_INDS[i]];
-        while (b_copy != 0)
+        while (b_piece != 0)
         {
-            // subtract piece square value for piece to eval
-            eval -= ALL_PSQT[i][mirror_square(pop_lsb(b_copy))];
+            eval -= PIECE_MATERIAL_SCORE[i + 1] + pieces_psqt[i][popLSB(b_piece)];
         }
     }
     return eval;
 }
 
-Move find_best_move(Board board, int depth)
+Move findBestMove(Board board, int baseDepth)
 {
-    vector<Move> moves = generate_legal_moves(board);
+    int depth = baseDepth + depthBonus(board);
+    MoveList moves = generateLegalMoves(board);
 
-    Move best_move = moves[0];
+    // No legal moves: checkmate or stalemate
+    if (moves.empty())
+        return 0; // no move
 
-    int best_score = board.white_to_move ? -INF : INF;
+    // Safety: never search below depth 1
+    if (depth < 1)
+        depth = 1;
+
+    Move bestMove = moves[0];
+
+    int bestScore = board.whiteToMove ? -INF : INF;
 
     for (Move move : moves)
     {
-        Board copy = board;
-        apply_move(copy, move);
+        Undo undo;
+        makeMove(board, move, undo);
 
-        int score = minimax(copy, depth - 1, -INF, INF);
+        int score = minimax(board, depth - 1, -INF, INF);
 
-        if (board.white_to_move && score > best_score)
+        undoMove(board, move, undo);
+
+        if (board.whiteToMove && score > bestScore)
         {
-            best_score = score;
-            best_move = move;
+            bestScore = score;
+            bestMove = move;
         }
-        if (!board.white_to_move && score < best_score)
+        else if (!board.whiteToMove && score < bestScore)
         {
-            best_score = score;
-            best_move = move;
+            bestScore = score;
+            bestMove = move;
         }
     }
-    return best_move;
+
+    return bestMove;
 }
 
-                                                                    // MINIMAX ALGORITHM
+//--------------------- MiniMax & Search
+
 // init with a = -inf, b = inf
 int minimax(Board board, int depth, int alpha, int beta)
 {
-    if (depth == 0)
+    const int og_alpha = alpha;
+    const int og_beta = beta;
+
+    TTEntry entry;
+    if (ttProbe(board.hash, entry))
+    {
+        if (entry.depth >= depth)
+        {
+            if (entry.flag == EXACT)
+                return entry.score;
+
+            if (entry.flag == LOWER_BOUND)
+                alpha = std::max(alpha, entry.score);
+
+            else if (entry.flag == UPPER_BOUND)
+                beta = std::min(beta, entry.score);
+
+            if (alpha >= beta)
+                return entry.score;
+        }
+    }
+
+    if (depth <= 0)
         return evaluate(board);
 
-    vector<Move> moves = generate_legal_moves(board);
+    MoveList moves = generateLegalMoves(board);
 
-    // CHECKMATE / STALEMATE
     if (moves.empty())
     {
-        if (is_checkmate(board)) // checkmate
+        if (isCheckmate(board)) // checkmate
         {
-            return board.white_to_move ? depth - MATE_SCORE : MATE_SCORE - depth;
+            return board.whiteToMove
+                       ? depth - INF
+                       : INF - depth;
         }
         else // stalemate
             return 0;
     }
 
-    if (board.white_to_move) // maximise
+    if (isDrawByRepetition(board))
+        return 0;
+
+    // order the moves based on their score given in movelist.hpp
+    orderMoves(moves, board);
+
+    int bestScore;
+    Move bestMove = 0;
+
+    if (board.whiteToMove) // maximise
     {
-        int max_eval = -INF;
+        bestScore = -INF;
+
         for (Move move : moves)
         {
-            Board copy = board;
-            apply_move(copy, move);
+            Undo undo;
+            makeMove(board, move,undo);
 
-            int eval = minimax(copy, depth - 1, alpha, beta);
-            max_eval = max(max_eval, eval);
-            alpha = max(alpha, eval);
+            int eval = minimax(board, depth - 1, alpha, beta);
+
+            undoMove(board, move, undo);
+
+            if (eval > bestScore)
+            {
+                bestScore = eval;
+                bestMove = move;
+            }
+
+            alpha = std::max(alpha, eval);
+
             if (beta <= alpha)
                 break;
         }
-        return max_eval;
     }
 
     else // minimise
     {
-        int min_eval = INF;
+        bestScore = INF;
+
         for (Move move : moves)
         {
-            Board copy = board;
-            apply_move(copy, move);
+            Undo undo;
+            makeMove(board, move,undo);
 
-            int eval = minimax(copy, depth - 1, alpha, beta);
-            min_eval = min(min_eval, eval);
-            beta = min(beta, eval);
+            int eval = minimax(board, depth - 1, alpha, beta);
+
+            undoMove(board, move, undo);
+
+            if (eval < bestScore)
+            {
+                bestScore = eval;
+                bestMove = move;
+            }
+
+            beta = std::min(beta, eval);
+
             if (beta <= alpha)
                 break;
         }
-        return min_eval;
     }
+
+    // STORE RESULT IN TRANSPOSITION TABLE
+    TTEntry newEntry;
+    newEntry.key = board.hash;
+    newEntry.depth = depth;
+    newEntry.score = bestScore;
+    newEntry.bestMove = bestMove;
+
+    if (bestScore <= og_alpha)
+        newEntry.flag = UPPER_BOUND;
+    else if (bestScore >= og_beta)
+        newEntry.flag = LOWER_BOUND;
+    else
+        newEntry.flag = EXACT;
+
+    ttStore(board.hash, newEntry);
+
+    return bestScore;
 }
 
 int search(Board board, int depth)
 {
-    if (depth == 0) // depth limit hit -> return value
+
+    if (depth == 0) // depth limit hit -> return eval
         return evaluate(board);
 
-    vector<Move> moves = generate_legal_moves(board); // get vector of all legal moves
+    // get array of all legal moves from MoveList
+    MoveList moves = generateLegalMoves(board);
 
     // CHECKMATE / STALEMATE
     if (moves.empty())
     {
-        if (is_checkmate(board)) // checkmate
+        if (isCheckmate(board)) // checkmate
         {
-            return board.white_to_move ? depth - MATE_SCORE : MATE_SCORE - depth;
+            return board.whiteToMove
+                       ? depth - INF
+                       : INF - depth;
         }
         else // stalemate
             return 0;
     }
 
-    int best = board.white_to_move ? -INF : INF;
+    if (isDrawByRepetition(board))
+        return 0;
+
+    int best = board.whiteToMove ? -INF : INF;
 
     for (Move move : moves)
     {
-        Board copy = board;
-        apply_move(copy, move);
+        Undo undo;
+        makeMove(board, move,undo);
 
-        int score = search(copy, depth - 1);
+        int score = search(board, depth - 1);
 
-        if (board.white_to_move)
-            best = max(best, score);
+        undoMove(board, move, undo);
+
+        if (board.whiteToMove)
+            best = std::max(best, score);
         else
-            best = min(best, score);
+            best = std::min(best, score);
     }
     return best;
 }
 
+//--------------------- Dynamic Depth Searching
+
+int depthBonus(const Board &board)
+{
+    const int numPieces = countPiecesOnBoard(board);
+
+    if (numPieces == 0)
+        return 5;
+    if (numPieces <= 4)
+        return 2;
+    else if (numPieces <= 8)
+        return 1;
+    return 0;
+}
+
+//--------------------- Quiescence
+/*
+    When depth limit reached, engine returns eval but there may be obvious tactical moves
+    e.g. queen captures piece at depth = 0 -> eval = +5, but opponent can recapture next move -> eval = -4
+    Instead, this will continue to evaluate positions with obvious tactical continuations, until no forcing moves remain
+    Quiet position -> evaluate, Tactical position -> continue searching
+*/
+
+int quiescence(Board &board, int alpha, int beta)
+{
+    return 0;
+}

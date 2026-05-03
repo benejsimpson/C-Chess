@@ -5,7 +5,7 @@
 
 using namespace std;
 
-bool evaluate_csv_positions(const std::string& version = "minimax_depth3_1");
+bool evaluate_csv_positions(const std::string &version = "minimax_depth3_1");
 
 namespace
 {
@@ -17,7 +17,7 @@ namespace
         string stockfish_eval;
     };
 
-    vector<string> parse_csv_row(const string& line)
+    vector<string> parse_csv_row(const string &line)
     {
         vector<string> fields;
         string field;
@@ -54,7 +54,7 @@ namespace
         return fields;
     }
 
-    string escape_csv_field(const string& field)
+    string escape_csv_field(const string &field)
     {
         if (field.find_first_of("\",") == string::npos)
         {
@@ -77,7 +77,7 @@ namespace
         return escaped;
     }
 
-    vector<CsvRow> read_rows_from_csv(const string& file_path)
+    vector<CsvRow> read_rows_from_csv(const string &file_path)
     {
         ifstream file(file_path);
         vector<CsvRow> rows;
@@ -115,10 +115,8 @@ namespace
 
             if (!fields.empty() && !fields[0].empty())
             {
-                rows.push_back({
-                    fields[0],
-                    fields.size() > 1 ? fields[1] : ""
-                });
+                rows.push_back({fields[0],
+                                fields.size() > 1 ? fields[1] : ""});
             }
         }
 
@@ -134,32 +132,27 @@ struct EvalResult
 };
 
 std::vector<EvalResult> evaluate_positions_from_csv(
-    const std::string& file_path,
-    const std::string& version);
+    const std::string &file_path,
+    const std::string &version);
 
 bool write_eval_results_to_csv(
-    const std::vector<EvalResult>& results,
-    const std::string& file_path,
-    const std::string& version);
-
-
-
-
-
+    const std::vector<EvalResult> &results,
+    const std::string &file_path,
+    const std::string &version);
 
 vector<EvalResult> evaluate_positions_from_csv(
-    const string& file_path,
-    const string& version)
+    const string &file_path,
+    const string &version)
 {
     vector<EvalResult> results;
     const auto rows = read_rows_from_csv(file_path);
 
-    for (const CsvRow& row : rows)
+    for (const CsvRow &row : rows)
     {
         Board board;
-        load_fen(board, row.fen);
+        loadFEN(board, row.fen);
 
-        const int eval_score = minimax(board,4,-INF,INF);
+        const int eval_score = minimax(board, 4, -INF, INF);
 
         results.push_back({
             row.fen,
@@ -172,9 +165,9 @@ vector<EvalResult> evaluate_positions_from_csv(
 }
 
 bool write_eval_results_to_csv(
-    const vector<EvalResult>& results,
-    const string& file_path,
-    const string& version)
+    const vector<EvalResult> &results,
+    const string &file_path,
+    const string &version)
 {
     ifstream in(file_path);
     vector<vector<string>> table;
@@ -184,7 +177,8 @@ bool write_eval_results_to_csv(
         string line;
         while (getline(in, line))
         {
-            if (line.empty()) continue;
+            if (line.empty())
+                continue;
             table.push_back(parse_csv_row(line));
         }
         in.close();
@@ -194,13 +188,11 @@ bool write_eval_results_to_csv(
     {
         table.push_back({"FEN", "Stockfish", version});
 
-        for (const auto& r : results)
+        for (const auto &r : results)
         {
-            table.push_back({
-                r.fen,
-                r.stockfish_eval,
-                to_string(r.eval)
-            });
+            table.push_back({r.fen,
+                             r.stockfish_eval,
+                             to_string(r.eval)});
         }
     }
 
@@ -212,10 +204,8 @@ bool write_eval_results_to_csv(
         {
             if (i + 1 >= table.size())
             {
-                table.push_back({
-                    results[i].fen,
-                    results[i].stockfish_eval
-                });
+                table.push_back({results[i].fen,
+                                 results[i].stockfish_eval});
             }
 
             table[i + 1].push_back(to_string(results[i].eval));
@@ -226,7 +216,7 @@ bool write_eval_results_to_csv(
     if (!out.is_open())
         return false;
 
-    for (const auto& row : table)
+    for (const auto &row : table)
     {
         for (size_t i = 0; i < row.size(); ++i)
         {
@@ -240,7 +230,7 @@ bool write_eval_results_to_csv(
     return true;
 }
 
-bool evaluate_csv_positions(const string& version)
+bool evaluate_csv_positions(const string &version)
 {
     const vector<EvalResult> results = evaluate_positions_from_csv(FILE_PATH, version);
     return write_eval_results_to_csv(results, FILE_PATH, version);

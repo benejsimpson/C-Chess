@@ -3,6 +3,7 @@
 #include <vector>
 #include "core/move.hpp"
 #include "core/board.hpp"
+#include "core/movelist.hpp"
 
 enum class GameMode
 {
@@ -18,7 +19,7 @@ struct GuiState
     
                                                     // Selection
     int selected_square = -1;
-    std::vector<Move> selected_moves;
+    MoveList selected_moves;
 
                                                     // Dragging
     bool dragging = false;

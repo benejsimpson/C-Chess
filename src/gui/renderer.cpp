@@ -16,34 +16,34 @@
 
 namespace
 {
-int find_checked_king_square(const Board& board, bool white_king)
-{
-    const Piece king = white_king ? WK : BK;
-
-    for (int square = 0; square < 64; ++square)
+    int find_checked_king_square(const Board &board, bool white_king)
     {
-        if (board.squares[square] == king)
-            return square;
+        const Piece king = white_king ? WK : BK;
+
+        for (int square = 0; square < 64; ++square)
+        {
+            if (board.squares[square] == king)
+                return square;
+        }
+
+        return -1;
     }
-
-    return -1;
-}
 }
 
-                                                                    // Rendering helpers
+// Rendering helpers
 
-std::string wrap_text(const sf::Font& font, const std::string& text, unsigned int character_size, float max_width)
+std::string wrap_text(const sf::Font &font, const std::string &text, unsigned int character_size, float max_width)
 {
     if (text.empty())
         return {};
 
-    auto fits_width = [&](const std::string& candidate) -> bool
+    auto fits_width = [&](const std::string &candidate) -> bool
     {
         sf::Text measure(font, candidate, character_size);
         return measure.getLocalBounds().size.x <= max_width;
     };
 
-    auto break_long_word = [&](const std::string& word) -> std::vector<std::string>
+    auto break_long_word = [&](const std::string &word) -> std::vector<std::string>
     {
         std::vector<std::string> parts;
         std::string current;
@@ -76,7 +76,7 @@ std::string wrap_text(const sf::Font& font, const std::string& text, unsigned in
     while (input >> word)
     {
         std::vector<std::string> word_parts = fits_width(word) ? std::vector<std::string>{word} : break_long_word(word);
-        for (const std::string& part : word_parts)
+        for (const std::string &part : word_parts)
         {
             const std::string candidate = current_line.empty() ? part : current_line + " " + part;
             if (!current_line.empty() && !fits_width(candidate))
@@ -104,10 +104,9 @@ std::string wrap_text(const sf::Font& font, const std::string& text, unsigned in
 }
 
 static void draw_button(
-    sf::RenderWindow& window,
-    const Button& button,
-    const sf::Font& font
-)
+    sf::RenderWindow &window,
+    const Button &button,
+    const sf::Font &font)
 {
     sf::RectangleShape rect;
     rect.setPosition(sf::Vector2f(button.bounds.position.x, button.bounds.position.y));
@@ -127,12 +126,10 @@ static void draw_button(
             const float target_size = std::min(button.bounds.size.x, button.bounds.size.y) - padding * 2.f;
             sprite.setScale(sf::Vector2f(
                 target_size / static_cast<float>(tex_size.x),
-                target_size / static_cast<float>(tex_size.y)
-            ));
+                target_size / static_cast<float>(tex_size.y)));
             sprite.setPosition(sf::Vector2f(
                 button.bounds.position.x + (button.bounds.size.x - target_size) * 0.5f,
-                button.bounds.position.y + (button.bounds.size.y - target_size) * 0.5f
-            ));
+                button.bounds.position.y + (button.bounds.size.y - target_size) * 0.5f));
             window.draw(sprite);
             return;
         }
@@ -145,17 +142,15 @@ static void draw_button(
     const sf::FloatRect text_bounds = text.getLocalBounds();
     text.setPosition(sf::Vector2f(
         button.bounds.position.x + (button.bounds.size.x - text_bounds.size.x) * 0.5f,
-        button.bounds.position.y + (button.bounds.size.y - text_bounds.size.y) * 0.5f - text_bounds.position.y
-    ));
+        button.bounds.position.y + (button.bounds.size.y - text_bounds.size.y) * 0.5f - text_bounds.position.y));
 
     window.draw(text);
 }
 
 static void draw_textbox(
-    sf::RenderWindow& window,
-    const TextBox& box,
-    const sf::Font& font
-)
+    sf::RenderWindow &window,
+    const TextBox &box,
+    const sf::Font &font)
 {
     sf::RectangleShape rect;
     rect.setPosition(sf::Vector2f(box.bounds.position.x, box.bounds.position.y));
@@ -170,17 +165,15 @@ static void draw_textbox(
     text.setFillColor(sf::Color::White);
     text.setPosition(sf::Vector2f(
         box.bounds.position.x + 8.f,
-        box.bounds.position.y + 8.f
-    ));
+        box.bounds.position.y + 8.f));
     window.draw(text);
 }
 
 static void draw_tooltip(
-    sf::RenderWindow& window,
-    const sf::Font& font,
-    const std::string& text,
-    sf::Vector2f anchor
-)
+    sf::RenderWindow &window,
+    const sf::Font &font,
+    const std::string &text,
+    sf::Vector2f anchor)
 {
     const unsigned int character_size = 14;
     sf::Text tooltip_text(font, text, character_size);
@@ -192,8 +185,7 @@ static void draw_tooltip(
 
     sf::Vector2f box_size(
         text_bounds.size.x + padding.x * 2.f,
-        text_bounds.size.y + padding.y * 2.f + 4.f
-    );
+        text_bounds.size.y + padding.y * 2.f + 4.f);
 
     sf::Vector2f position(anchor.x, anchor.y - box_size.y - 8.f);
     if (position.x + box_size.x > static_cast<float>(window_size.x) - 8.f)
@@ -213,28 +205,26 @@ static void draw_tooltip(
 
     tooltip_text.setPosition(sf::Vector2f(
         position.x + padding.x,
-        position.y + padding.y - text_bounds.position.y
-    ));
+        position.y + padding.y - text_bounds.position.y));
     window.draw(tooltip_text);
 }
 
-                                                                    // Main draw function
+// Main draw function
 
 void Renderer::draw(
-    sf::RenderWindow& window,
-    const Game& game,
-    const GuiState& gui,
-    const TextureManager& textures,
-    const sf::Font& font,
-    const Button& flip_button,
-    const Button& auto_flip_button,
-    const Button& copy_fen_button,
-    const Button& load_fen_button,
-    const Button& two_player_button,
-    const Button& white_ai_button,
-    const Button& black_ai_button,
-    const TextBox& fen_box
-)
+    sf::RenderWindow &window,
+    const Game &game,
+    const GuiState &gui,
+    const TextureManager &textures,
+    const sf::Font &font,
+    const Button &flip_button,
+    const Button &auto_flip_button,
+    const Button &copy_fen_button,
+    const Button &load_fen_button,
+    const Button &two_player_button,
+    const Button &white_ai_button,
+    const Button &black_ai_button,
+    const TextBox &fen_box)
 {
     window.clear(sf::Color(25, 25, 25));
 
@@ -257,38 +247,36 @@ void Renderer::draw(
         two_player_button,
         white_ai_button,
         black_ai_button,
-        fen_box
-    );
+        fen_box);
     draw_promotion_popup(window, gui, textures);
     draw_illegal_flash(window, gui);
 
     window.display();
 }
 
-                                                                    // Board drawing
+// Board drawing
 
-void Renderer::draw_board(sf::RenderWindow& window, const GuiState& gui)
+void Renderer::draw_board(sf::RenderWindow &window, const GuiState &gui)
 {
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
-    const float board_left  = layout.board_left;
-    const float board_top   = layout.board_top;
+    const float board_left = layout.board_left;
+    const float board_top = layout.board_top;
 
     const sf::Color light_square(240, 217, 181);
     const sf::Color dark_square(181, 136, 99);
 
     for (int square = 0; square < 64; square++)
     {
-        int file = index_to_file(square);
-        int rank = index_to_rank(square);
+        int file = indexToFile(square);
+        int rank = indexToRank(square);
 
         sf::Vector2f pos = square_to_screen(square, gui.board_flipped, square_size);
 
         sf::RectangleShape tile;
         tile.setPosition(sf::Vector2f(
             board_left + pos.x,
-            board_top + pos.y
-        ));
+            board_top + pos.y));
         tile.setSize(sf::Vector2f(square_size, square_size));
 
         bool light = ((file + rank) % 2 == 1);
@@ -298,21 +286,21 @@ void Renderer::draw_board(sf::RenderWindow& window, const GuiState& gui)
     }
 }
 
-void Renderer::draw_last_move(sf::RenderWindow& window, const Game& game, const GuiState& gui)
+void Renderer::draw_last_move(sf::RenderWindow &window, const Game &game, const GuiState &gui)
 {
-    if (!game.has_last_move())
+    if (!game.hasLastMove())
         return;
 
-    Move last = game.get_last_move();
+    Move last = game.getLastMove();
 
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
-    const float board_left  = layout.board_left;
-    const float board_top   = layout.board_top;
+    const float board_left = layout.board_left;
+    const float board_top = layout.board_top;
 
     sf::Color highlight(246, 246, 105, 90);
 
-    int squares[2] = { last.from, last.to };
+    int squares[2] = {moveFrom(last), moveTo(last)};
 
     for (int sq : squares)
     {
@@ -327,15 +315,15 @@ void Renderer::draw_last_move(sf::RenderWindow& window, const Game& game, const 
     }
 }
 
-void Renderer::draw_selected_square(sf::RenderWindow& window, const GuiState& gui)
+void Renderer::draw_selected_square(sf::RenderWindow &window, const GuiState &gui)
 {
     if (gui.selected_square == -1)
         return;
 
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
-    const float board_left  = layout.board_left;
-    const float board_top   = layout.board_top;
+    const float board_left = layout.board_left;
+    const float board_top = layout.board_top;
 
     sf::Vector2f pos = square_to_screen(gui.selected_square, gui.board_flipped, square_size);
 
@@ -349,44 +337,43 @@ void Renderer::draw_selected_square(sf::RenderWindow& window, const GuiState& gu
     window.draw(rect);
 }
 
-void Renderer::draw_legal_moves(sf::RenderWindow& window, const GuiState& gui)
+void Renderer::draw_legal_moves(sf::RenderWindow &window, const GuiState &gui)
 {
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
-    const float board_left  = layout.board_left;
-    const float board_top   = layout.board_top;
+    const float board_left = layout.board_left;
+    const float board_top = layout.board_top;
 
-    for (const Move& move : gui.selected_moves)
+    for (const Move &move : gui.selected_moves)
     {
-        sf::Vector2f pos = square_to_screen(move.to, gui.board_flipped, square_size);
+        sf::Vector2f pos = square_to_screen(moveTo(move), gui.board_flipped, square_size);
 
         sf::CircleShape dot(square_size * 0.12f);
         dot.setFillColor(sf::Color(30, 30, 30, 140));
         dot.setPosition(sf::Vector2f(
             board_left + pos.x + square_size * 0.5f - dot.getRadius(),
-            board_top + pos.y + square_size * 0.5f - dot.getRadius()
-        ));
+            board_top + pos.y + square_size * 0.5f - dot.getRadius()));
 
         window.draw(dot);
     }
 }
 
-void Renderer::draw_check_highlight(sf::RenderWindow& window, const Game& game, const GuiState& gui)
+void Renderer::draw_check_highlight(sf::RenderWindow &window, const Game &game, const GuiState &gui)
 {
-    if (!game.is_check())
+    if (!game.isCheck())
         return;
 
-    const Board& board = game.get_board();
-    const int king_square = find_checked_king_square(board, game.white_to_move());
-    if (king_square == -1)
+    const Board &board = game.getBoard();
+    const int getKingSquareIndex = find_checked_king_square(board, game.whiteToMove());
+    if (getKingSquareIndex == -1)
         return;
 
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
-    const float board_left  = layout.board_left;
-    const float board_top   = layout.board_top;
+    const float board_left = layout.board_left;
+    const float board_top = layout.board_top;
 
-    sf::Vector2f pos = square_to_screen(king_square, gui.board_flipped, square_size);
+    sf::Vector2f pos = square_to_screen(getKingSquareIndex, gui.board_flipped, square_size);
 
     sf::RectangleShape rect;
     rect.setPosition(sf::Vector2f(board_left + pos.x, board_top + pos.y));
@@ -396,21 +383,20 @@ void Renderer::draw_check_highlight(sf::RenderWindow& window, const Game& game, 
     window.draw(rect);
 }
 
-                                                                    // Piece drawing
+// Piece drawing
 
 void Renderer::draw_pieces(
-    sf::RenderWindow& window,
-    const Game& game,
-    const GuiState& gui,
-    const TextureManager& textures
-)
+    sf::RenderWindow &window,
+    const Game &game,
+    const GuiState &gui,
+    const TextureManager &textures)
 {
-    const Board& board = game.get_board();
+    const Board &board = game.getBoard();
 
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
-    const float board_left  = layout.board_left;
-    const float board_top   = layout.board_top;
+    const float board_left = layout.board_left;
+    const float board_top = layout.board_top;
 
     for (int square = 0; square < 64; square++)
     {
@@ -423,7 +409,7 @@ void Renderer::draw_pieces(
         if (gui.dragging && square == gui.drag_from_square)
             continue;
 
-        const sf::Texture& texture = textures.get_piece_texture(piece);
+        const sf::Texture &texture = textures.getPieceTexture(piece);
 
         sf::Sprite sprite(texture);
 
@@ -433,8 +419,7 @@ void Renderer::draw_pieces(
 
         sprite.setScale(sf::Vector2f(
             square_size / static_cast<float>(tex_size.x),
-            square_size / static_cast<float>(tex_size.y)
-        ));
+            square_size / static_cast<float>(tex_size.y)));
 
         sf::Vector2f pos = square_to_screen(square, gui.board_flipped, square_size);
         sprite.setPosition(sf::Vector2f(board_left + pos.x, board_top + pos.y));
@@ -444,10 +429,9 @@ void Renderer::draw_pieces(
 }
 
 void Renderer::draw_dragged_piece(
-    sf::RenderWindow& window,
-    const GuiState& gui,
-    const TextureManager& textures
-)
+    sf::RenderWindow &window,
+    const GuiState &gui,
+    const TextureManager &textures)
 {
     if (!gui.dragging)
         return;
@@ -455,7 +439,7 @@ void Renderer::draw_dragged_piece(
     if (gui.dragged_piece == Empty)
         return;
 
-    const sf::Texture& texture = textures.get_piece_texture(gui.dragged_piece);
+    const sf::Texture &texture = textures.getPieceTexture(gui.dragged_piece);
     sf::Sprite sprite(texture);
 
     sf::Vector2u tex_size = texture.getSize();
@@ -467,33 +451,30 @@ void Renderer::draw_dragged_piece(
 
     sprite.setScale(sf::Vector2f(
         square_size / static_cast<float>(tex_size.x),
-        square_size / static_cast<float>(tex_size.y)
-    ));
+        square_size / static_cast<float>(tex_size.y)));
 
     sprite.setPosition(sf::Vector2f(
         gui.drag_mouse_x - square_size * 0.5f,
-        gui.drag_mouse_y - square_size * 0.5f
-    ));
+        gui.drag_mouse_y - square_size * 0.5f));
 
     window.draw(sprite);
 }
 
-                                                                    // Side panel
+// Side panel
 
 void Renderer::draw_side_panel(
-    sf::RenderWindow& window,
-    const Game& game,
-    const GuiState& gui,
-    const sf::Font& font,
-    const Button& flip_button,
-    const Button& auto_flip_button,
-    const Button& copy_fen_button,
-    const Button& load_fen_button,
-    const Button& two_player_button,
-    const Button& white_ai_button,
-    const Button& black_ai_button,
-    const TextBox& fen_box
-)
+    sf::RenderWindow &window,
+    const Game &game,
+    const GuiState &gui,
+    const sf::Font &font,
+    const Button &flip_button,
+    const Button &auto_flip_button,
+    const Button &copy_fen_button,
+    const Button &load_fen_button,
+    const Button &two_player_button,
+    const Button &white_ai_button,
+    const Button &black_ai_button,
+    const TextBox &fen_box)
 {
     const LayoutMetrics layout = compute_layout(window.getSize());
     const sf::Vector2f mouse_pos(gui.drag_mouse_x, gui.drag_mouse_y);
@@ -530,13 +511,12 @@ void Renderer::draw_side_panel(
         draw_tooltip(window, font, auto_flip_display.tooltip, sf::Vector2f(auto_flip_display.bounds.position.x, auto_flip_display.bounds.position.y));
 }
 
-                                                                    // Promotion popup
+// Promotion popup
 
 void Renderer::draw_promotion_popup(
-    sf::RenderWindow& window,
-    const GuiState& gui,
-    const TextureManager& textures
-)
+    sf::RenderWindow &window,
+    const GuiState &gui,
+    const TextureManager &textures)
 {
     if (!gui.show_promotion_popup)
         return;
@@ -546,7 +526,8 @@ void Renderer::draw_promotion_popup(
     const float popup_width = square_size * 4.f;
     const float popup_height = square_size;
 
-    const sf::Vector2f target_pos = square_to_screen(gui.pending_promotion_move.to, gui.board_flipped, square_size);
+    const int target_square = moveTo(gui.pending_promotion_move);
+    const sf::Vector2f target_pos = square_to_screen(target_square, gui.board_flipped, square_size);
     float x = layout.board_left + target_pos.x - square_size * 1.5f;
     float y = layout.board_top + target_pos.y;
 
@@ -566,7 +547,10 @@ void Renderer::draw_promotion_popup(
     window.draw(bg);
 
     Piece options[4];
-    if (is_white(gui.pending_promotion_move.piece))
+
+    const bool white_promotion = indexToRank(target_square) == 7;
+
+    if (white_promotion)
     {
         options[0] = WQ;
         options[1] = WR;
@@ -583,7 +567,7 @@ void Renderer::draw_promotion_popup(
 
     for (int i = 0; i < 4; i++)
     {
-        const sf::Texture& texture = textures.get_piece_texture(options[i]);
+        const sf::Texture &texture = textures.getPieceTexture(options[i]);
         sf::Sprite sprite(texture);
 
         sf::Vector2u tex_size = texture.getSize();
@@ -592,29 +576,27 @@ void Renderer::draw_promotion_popup(
 
         sprite.setScale(sf::Vector2f(
             square_size / static_cast<float>(tex_size.x),
-            square_size / static_cast<float>(tex_size.y)
-        ));
+            square_size / static_cast<float>(tex_size.y)));
 
         sprite.setPosition(sf::Vector2f(
             x + i * square_size,
-            y
-        ));
+            y));
 
         window.draw(sprite);
     }
 }
 
-                                                                    // Illegal move flash
+// Illegal move flash
 
-void Renderer::draw_illegal_flash(sf::RenderWindow& window, const GuiState& gui)
+void Renderer::draw_illegal_flash(sf::RenderWindow &window, const GuiState &gui)
 {
     if (!gui.show_illegal_flash || gui.illegal_flash_square == -1)
         return;
 
     const LayoutMetrics layout = compute_layout(window.getSize());
     const float square_size = layout.square_size;
-    const float board_left  = layout.board_left;
-    const float board_top   = layout.board_top;
+    const float board_left = layout.board_left;
+    const float board_top = layout.board_top;
 
     sf::Vector2f pos = square_to_screen(gui.illegal_flash_square, gui.board_flipped, square_size);
 
@@ -631,8 +613,8 @@ void Renderer::draw_illegal_flash(sf::RenderWindow& window, const GuiState& gui)
 
 sf::Vector2f Renderer::square_to_screen(int square, bool board_flipped, float square_size) const
 {
-    int file = index_to_file(square);
-    int rank = index_to_rank(square);
+    int file = indexToFile(square);
+    int rank = indexToRank(square);
 
     int draw_file = file;
     int draw_rank = 7 - rank;
@@ -647,6 +629,5 @@ sf::Vector2f Renderer::square_to_screen(int square, bool board_flipped, float sq
     // board_left and board_top are added by the calling function.
     return sf::Vector2f(
         static_cast<float>(draw_file) * square_size,
-        static_cast<float>(draw_rank) * square_size
-    );
+        static_cast<float>(draw_rank) * square_size);
 }

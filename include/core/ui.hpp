@@ -1,5 +1,5 @@
 #pragma once
-#include "utils.h"
+#include "utils.hpp"
 #include "move.hpp"
 #include "board.hpp"
 #include "movegen.hpp"
@@ -10,6 +10,6 @@ struct Board;
 void init_window();
 
 // run main loop
-void run_ui(Board& board);
+void run_ui(Board &board);
 
-std::vector<Move> generate_legal_moves_for_square(const Board& board, int square);
+MoveList generateLegalMovesForSquare(const Board &board, int square);

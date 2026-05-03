@@ -6,649 +6,428 @@
 #include <vector>
 using namespace std;
 
-// --------------------------------------------------
-// Internal helpers
-// --------------------------------------------------
+// Constants and tables
 
-static void generate_pawn_moves(const Board &board, vector<Move> &moves, int square);
-static void generate_knight_moves(const Board &board, vector<Move> &moves, int square);
-static void generate_bishop_moves(const Board &board, vector<Move> &moves, int square);
-static void generate_rook_moves(const Board &board, vector<Move> &moves, int square);
-static void generate_queen_moves(const Board &board, vector<Move> &moves, int square);
-static void generate_king_moves(const Board &board, vector<Move> &moves, int square);
-static bool is_legal_position_after_move(const Board &board, const Move &move);
-bool is_in_check(const Board &board, bool white_king);
+// bitmask of squares that must be empty for white to castle kingside
+static constexpr BitB WHITE_KINGSIDE_CASTLE_EMPTY_SQUARES = 1ULL << 5 | 1ULL << 6;
+// bitmask of squares that must be empty for white to castle queenside
+static constexpr BitB WHITE_QUEENSIDE_CASTLE_EMPTY_SQUARES = 1ULL << 1 | 1ULL << 2 | 1ULL << 3;
+// bitmask of squares that must be empty for black to castle kingside
+static constexpr BitB BLACK_KINGSIDE_CASTLE_EMPTY_SQUARES = 1ULL << 61 | 1ULL << 62;
+// bitmask of squares that must be empty for black to castle queenside
+static constexpr BitB BLACK_QUEENSIDE_CASTLE_EMPTY_SQUARES = 1ULL << 57 | 1ULL << 58 | 1ULL << 59;
+// bitmask of squares that must not be attacked for white to castle kingside
+static constexpr BitB WHITE_KINGSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 4 | 1ULL << 5 | 1ULL << 6;
+// bitmask of squares that must not be attacked for white to castle queenside
+static constexpr BitB WHITE_QUEENSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 2 | 1ULL << 3 | 1ULL << 4;
+// bitmask of squares that must not be attacked for black to castle kingside
+static constexpr BitB BLACK_KINGSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 60 | 1ULL << 61 | 1ULL << 62;
+// bitmask of squares that must not be attacked for black to castle queenside
+static constexpr BitB BLACK_QUEENSIDE_CASTLE_ATTACKED_SQUARES = 1ULL << 58 | 1ULL << 59 | 1ULL << 60;
 
-const int KNIGHT_MOVES[8][2] = {{1, 2}, {1, -2}, {-1, 2}, {-1, -2}, {2, 1}, {2, -1}, {-2, 1}, {-2, -1}};
-const int KING_MOVES[8][2] = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-const int DIAGONAL_MOVES[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-const int STRAIGHT_MOVES[4][2] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+//--------------------- Internal helpers
 
-// returns true if square is attacked by enemy [piece_type]
-static bool is_square_attacked_by_pawn(const Board &board, int square, bool by_white);
-static bool is_square_attacked_by_knight(const Board &board, int square, bool by_white);
-static bool is_square_attacked_by_diagonal(const Board &board, int square, bool by_white);
-static bool is_square_attacked_by_straight(const Board &board, int square, bool by_white);
-static bool is_square_attacked_by_king(const Board &board, int square, bool by_white);
+static void generatePawnMoves(const Board &board, MoveList &moves, int square);
+static void generateKnightMoves(const Board &board, MoveList &moves, int square);
+static void generateBishopMoves(const Board &board, MoveList &moves, int square);
+static void generateRookMoves(const Board &board, MoveList &moves, int square);
+static void generateQueenMoves(const Board &board, MoveList &moves, int square);
+static void generateKingMoves(const Board &board, MoveList &moves, int square);
+static void generateKingCastles(const Board &board, MoveList &moves, int from);
 
-bool is_square_attacked(const Board &board, int square, bool by_white);
+static bool isSquareAttackedByPawn(const Board &board, int square, bool by_white);
+static bool isSquareAttackedByKnight(const Board &board, int square, bool by_white);
+static bool isSquareAttackedByDiagonal(const Board &board, int square, bool by_white);
+static bool isSquareAttackedByStraight(const Board &board, int square, bool by_white);
+static bool isSquareAttackedByKing(const Board &board, int square, bool by_white);
 
+bool isSquareAttacked(const Board &board, int square, bool by_white);
 
-vector<Move> generate_pseudo_legal_moves(const Board &board)
+bool isInCheck(const Board &board, bool white_king);
+
+static bool isLegalPositionAfterMove(const Board &board, const Move &move);
+
+static BitB capturableOpponentOccupancy(const Board &board, bool white);
+
+//--------------------- Move generation
+
+MoveList generateLegalMoves(const Board &board)
 {
-    vector<Move> moves;
-    const BitB w_occup = white_occupancy(board);
-    const BitB b_occup = black_occupancy(board);
+    MoveList pseudo_moves = generatePseudoLegalMoves(board);
+    MoveList legalMoves;
 
-    for (int square = 0; square < 64; square++)
+    for (int i = 0; i < pseudo_moves.count; ++i)
     {
-        if (
-            board.white_to_move
-            ? !is_bit_set(w_occup,square)
-            : !is_bit_set(b_occup,square)
-        )
-            continue;
+        Move move = pseudo_moves.moves[i];
 
-        Piece piece = board.squares[square];
-        switch (get_piece_type(piece))
+        if (isLegalPositionAfterMove(board, move))
         {
-        case PAWN:
-            generate_pawn_moves(board, moves, square);
-            break;
-
-        case KNIGHT:
-            generate_knight_moves(board, moves, square);
-            break;
-
-        case BISHOP:
-            generate_bishop_moves(board, moves, square);
-            break;
-
-        case ROOK:
-            generate_rook_moves(board, moves, square);
-            break;
-
-        case QUEEN:
-            generate_queen_moves(board, moves, square);
-            break;
-
-        case KING:
-            generate_king_moves(board, moves, square);
-            break;
-
-        default:
-            break;
+            legalMoves.add(move);
         }
     }
+
+    return legalMoves;
+}
+
+MoveList generatePseudoLegalMoves(const Board &board)
+{
+    MoveList moves;
+
+    BitB pawns = board.pieceBBs[pieceToBitboardIndex(board.whiteToMove ? WP : BP)];
+    while (pawns)
+    {
+        int from = popLSB(pawns);
+        generatePawnMoves(board, moves, from);
+    }
+
+    BitB knights = board.pieceBBs[pieceToBitboardIndex(board.whiteToMove ? WN : BN)];
+    while (knights)
+    {
+        int from = popLSB(knights);
+        generateKnightMoves(board, moves, from);
+    }
+
+    BitB bishops = board.pieceBBs[pieceToBitboardIndex(board.whiteToMove ? WB : BB)];
+    while (bishops)
+    {
+        int from = popLSB(bishops);
+        generateBishopMoves(board, moves, from);
+    }
+
+    BitB rooks = board.pieceBBs[pieceToBitboardIndex(board.whiteToMove ? WR : BR)];
+    while (rooks)
+    {
+        int from = popLSB(rooks);
+        generateRookMoves(board, moves, from);
+    }
+
+    BitB queens = board.pieceBBs[pieceToBitboardIndex(board.whiteToMove ? WQ : BQ)];
+    while (queens)
+    {
+        int from = popLSB(queens);
+        generateQueenMoves(board, moves, from);
+    }
+
+    BitB king = board.pieceBBs[pieceToBitboardIndex(board.whiteToMove ? WK : BK)];
+    int from = LsbIndex(king);
+    if (from == -1)
+        cout << "king not found\n";
+    else
+        generateKingMoves(board, moves, from);
+
     return moves;
 }
 
-// --------------------------------------------------
-// Generate all fully legal moves
-// --------------------------------------------------
-
-vector<Move> generate_legal_moves(const Board &board)
+// generates all legal moves, iterates through them, returns MoveList of moves from [square]
+MoveList generateLegalMovesForSquare(const Board &board, const int square)
 {
-    vector<Move> pseudo_moves = generate_pseudo_legal_moves(board);
-    vector<Move> legal_moves;
+    MoveList moves;
+    MoveList allMoves = generateLegalMoves(board);
 
-    for (const Move &move : pseudo_moves)
+    for (int i = 0; i < allMoves.count; ++i)
     {
-        if (is_legal_position_after_move(board, move))
+        Move move = allMoves.moves[i];
+
+        if (moveFrom(move) == square)
         {
-            legal_moves.push_back(move);
+            moves.add(move);
         }
     }
 
-    return legal_moves;
+    return moves;
 }
 
-// --------------------------------------------------
-// Check whether a move leaves the side's king safe
-// --------------------------------------------------
-
-static bool is_legal_position_after_move(const Board &board, const Move &move)
+static bool isLegalPositionAfterMove(const Board &board, const Move &move)
 {
-    Board copy = board; // create a test board
+    Undo undo;
+    Board copy = board;
 
-    // Apply the move to copy
-    apply_move(copy, move);
+    bool sideThatMoved = board.whiteToMove;
 
-    bool white_moved = is_white(move.piece);
+    makeMove(copy, move, undo);
 
-    // If that side is now in check -> illegal move
-    return !is_in_check(copy, white_moved);
+    return !isInCheck(copy, sideThatMoved);
 }
 
-// --------------------------------------------------
-// Piece move generators
-// --------------------------------------------------
-/*
-    TO DO:
-    pawn - en passant, promotion
-    king/rook - castling
-*/
+//--------------------- Piece move generation helpers
 
-static void generate_pawn_moves(const Board &board, vector<Move> &moves, int square)
+static void quietMove(const int from, const int to, MoveList &moves)
 {
-    // load bbs
-    const BitB all_occup = all_occupancy(board);    // bb of all occupied squares
-    const BitB b_occup = black_occupancy(board);    // bb of black's occupied squares
-    const BitB w_occup = white_occupancy(board);    // bb of white's occupied squares
+    moves.add(createMove(from, to, QUIET));
+}
 
-    const bool white = is_bit_set(w_occup, square); // piece on start square is a [white] piece
-    const Piece pawn = board.squares[square];
+static void captureMove(const int from, const int to, MoveList &moves)
+{
+    moves.add(createMove(from, to, CAPTURE));
+}
 
-    const int start_rank = index_to_rank(square);   // the rank that the pawn is on before moving
-    const int start_file = index_to_file(square);   // the file that the pawn is on before moving
-    
-    const int home_rank = white ? 1 : 6;            // if the pawn is on this rank then it can double move
-    const int promotion_rank = white ? 7 : 0;       // if the moving to is this, then the pawn can promote
-    
-    const int d_rank = white ? +1 : -1;             // rank displacement of single step forward
-    
-    const int target_sq = get_move_to_ind(square,0,d_rank);
+static void generatePawnPromotions(const int from, const int to, MoveList &moves)
+{
+    moves.add(createMove(from, to, Q_PROMO));
+    moves.add(createMove(from, to, R_PROMO));
+    moves.add(createMove(from, to, B_PROMO));
+    moves.add(createMove(from, to, N_PROMO));
+}
 
-    if (target_sq == -1) 
-        // single step forward puts pawn on invalid square
-        // this should not happen realistically but may affect depth searching when promoting???
-        return;
+static void generatePawnMoves(const Board &board, MoveList &moves, int from)
+{
+    const bool white = board.whiteToMove;
+    const int rank = indexToRank(from);
+    const int direction = white ? 8 : -8;
 
-    if (!is_bit_set(all_occup, target_sq))          // there is nothing directly in front of the pawn
+    const BitB allOccup = allOccupancyBB(board);
+    const BitB captureOccup = capturableOpponentOccupancy(board, white);
+
+    const int oneForward = from + direction;
+    const bool promotionRank = rank == (white ? 6 : 1);
+
+    // Forward move
+    if (isValidIndex(oneForward) && !isBitSet(allOccup, oneForward))
     {
-        // PROMOTION
-        if (start_rank + d_rank == promotion_rank)  // pawn can move onto the promotion rank
+        if (promotionRank)
         {
-            Piece promotions[4] = {white ? WQ : BQ, white ? WR : BR, white ? WB : BB, white ? WN : BN};
-            for (Piece promotion : promotions)
-            {
-                moves.push_back(Move{square, target_sq, pawn, Empty, PROMOTION, promotion});
-            }
-        }
-
-        // SINGLE STEP FORWARD
-        else
-        {
-            moves.push_back(create_move(square, target_sq, pawn, Empty));
-        }
-
-        // DOUBLE STEP FORWARD
-        const int target_sq_2step = get_move_to_ind(square, 0, 2 * d_rank);
-
-        if (start_rank == home_rank && !is_bit_set(all_occup,target_sq_2step)) // pawn is on home rank and no piece on square 2 ahead
-        {
-            moves.push_back( Move{ square, target_sq_2step, pawn, Empty, DOUBLE_PAWN, Empty } );
-        }
-    }
-
-    // CAPTURES
-    int leftright[2] = {-1, 1};
-    for (int lr : leftright)
-    {
-        const int att_sq = get_move_to_ind(square, lr, d_rank);
-        if (att_sq == -1)
-            continue;
-        
-        if (att_sq == board.en_passant_square)
-        {
-            moves.push_back(
-                Move{
-                    square,
-                    att_sq,
-                    pawn,
-                    board.squares[att_sq + (white ? -8 : 8)],
-                    EN_PASSANT
-                }
-            );
-        }
-
-        // if no opponent piece on square -> continue
-        if (!is_bit_set(
-            white ? b_occup : w_occup,
-            att_sq)
-            )
-            continue;
-
-        if (start_rank + (white ? 1 : -1) == promotion_rank)
-        {
-            Piece promotions[4] = {white ? WQ : BQ, white ? WR : BR, white ? WB : BB, white ? WN : BN};
-            for (Piece promotion : promotions)
-            {
-                moves.push_back(
-                    Move{
-                        square,
-                        att_sq,
-                        pawn,
-                        board.squares[att_sq],
-                        PROMO_CAPTURE,
-                        promotion
-                    }
-                );
-            }
+            generatePawnPromotions(from, oneForward, moves);
         }
         else
         {
-            moves.push_back(
-                create_move(
-                    square,
-                    att_sq,
-                    pawn,
-                    board.squares[att_sq]
-                )
-            );
+            quietMove(from, oneForward, moves);
+
+            const bool startRank = rank == (white ? 1 : 6);
+            const int twoForward = from + 2 * direction;
+
+            if (startRank && !isBitSet(allOccup, twoForward))
+            {
+                moves.add(createMove(from, twoForward, DOUBLE_PAWN));
+            }
         }
     }
-}
 
-static void generate_knight_moves(const Board &board, vector<Move> &moves, int square)
-{
-    const BitB all_occup = all_occupancy(board); // bb of all occupied squares
-    const BitB b_occup = black_occupancy(board); // bb of black's occupied squares
-    const BitB w_occup = white_occupancy(board); // bb of white's occupied squares
-    const bool white = is_bit_set(w_occup, square); // piece on start square is a [white] piece
-    const Piece knight = board.squares[square];
+    // Captures
+    BitB attacks = white ? WHITE_PAWN_ATTACKS[from] : BLACK_PAWN_ATTACKS[from];
 
-    for (int i = 0; i < 8; i++)
+    while (attacks)
     {
-        const int tar_sq = get_move_to_ind(square, KNIGHT_MOVES[i][0], KNIGHT_MOVES[i][1]);
-        if (tar_sq == -1)
-            continue;
+        const int to = popLSB(attacks);
 
-        if (!is_bit_set(all_occup,tar_sq)) // no piece on target square -> can make quiet move
-            moves.push_back(create_move(square, tar_sq, knight, Empty));
-
-        else if (
-            is_bit_set(white ? b_occup : w_occup, tar_sq))
-            moves.push_back(create_move(square, tar_sq, knight, board.squares[tar_sq]));
-    }
-}
-
-static void generate_bishop_moves(const Board &board, vector<Move> &moves, int square)
-{
-    const BitB all_occup = all_occupancy(board); // bb of all occupied squares
-    const BitB b_occup = black_occupancy(board); // bb of black's occupied squares
-    const BitB w_occup = white_occupancy(board); // bb of white's occupied squares
-    const bool white = is_bit_set(w_occup, square); // piece on start square is a [white] piece
-    const Piece bishop = board.squares[square];
-
-    for (int i = 0; i < 4; i++) // loop through each diagonal direction from start square
-    {
-        int curr_sq = square;
-        while (true)
+        if (to == board.enPassantSquare)
         {
-            const int tar_sq = get_move_to_ind( // gets next square index on diagonal
-                curr_sq,
-                DIAGONAL_MOVES[i][0],
-                DIAGONAL_MOVES[i][1]
-            );
-
-            if (tar_sq == -1) // if off board -> try another diagonal
-                break;
-
-            if (!is_bit_set(all_occup,tar_sq)) // empty square -> piece can move here
+            moves.add(createMove(from, to, EN_PASSANT));
+        }
+        else if (isBitSet(captureOccup, to))
+        {
+            if (promotionRank)
             {
-                moves.push_back(create_move(square, tar_sq, bishop, Empty));
+                generatePawnPromotions(from, to, moves);
             }
-
-            else if (white // square has opponent piece on -> capture
-                    ? is_bit_set(b_occup, tar_sq)
-                    : is_bit_set(w_occup, tar_sq)
-                )
-            {
-                moves.push_back(create_move(square, tar_sq, bishop, board.squares[tar_sq]));
-                break;
-            }
-
-            // own piece blocks moves
             else
-                break;
-
-            curr_sq = tar_sq;
+            {
+                captureMove(from, to, moves);
+            }
         }
     }
 }
 
-static void generate_rook_moves(const Board &board, vector<Move> &moves, int square)
+static void generateKnightMoves(const Board &board, MoveList &moves, int from)
 {
-    const BitB all_occup = all_occupancy(board); // bb of all occupied squares
-    const BitB b_occup = black_occupancy(board); // bb of black's occupied squares
-    const BitB w_occup = white_occupancy(board); // bb of white's occupied squares
-    const bool white = is_bit_set(w_occup, square); // piece on start square is a [white] piece
-    const Piece rook = board.squares[square];
+    const BitB allOccup = allOccupancyBB(board); // bb of all occupied squares
+    const bool white = board.whiteToMove;        // piece on start square is a [white] piece
+    const BitB captureOccup = capturableOpponentOccupancy(board, white);
 
-    // moves along a rank
+    BitB const canMoveToSquares = KNIGHT_ATTACKS[from];
+    BitB emptySquaresToMoveTo = canMoveToSquares & ~allOccup;
+    BitB squaresWithOpponentPieces = canMoveToSquares & captureOccup;
+
+    while (emptySquaresToMoveTo)
+    {
+        const int to = popLSB(emptySquaresToMoveTo);
+        quietMove(from, to, moves);
+    }
+
+    while (squaresWithOpponentPieces)
+    {
+        const int captureSquare = popLSB(squaresWithOpponentPieces);
+        captureMove(from, captureSquare, moves);
+    }
+}
+
+static void generateBishopMoves(const Board &board, MoveList &moves, int from)
+{
+    const BitB allOccup = allOccupancyBB(board); // bb of all occupied squares
+    const bool white = board.whiteToMove;        // piece on start square is a [white] piece
+    const BitB captureOccup = capturableOpponentOccupancy(board, white);
+
+    // loop through each diagonal direction from start square
     for (int i = 0; i < 4; i++)
     {
-        int curr_sq = square; // current square testing - init as start square
-        const int d_file = STRAIGHT_MOVES[i][0];
-        const int d_rank = STRAIGHT_MOVES[i][1];
+        int currentSquare = from;
+        while (true)
+        {
+            // get next square index on diagonal
+            const int targetSquare = getNextMoveIndex(
+                currentSquare,
+                DIAGONAL_MOVES[i][0],
+                DIAGONAL_MOVES[i][1]);
+
+            if (targetSquare == -1) // if off board -> try another diagonal
+                break;
+
+            if (!isBitSet(allOccup, targetSquare)) // empty square -> piece can move here
+            {
+                quietMove(from, targetSquare, moves);
+            }
+
+            else if (isBitSet(captureOccup, targetSquare)) // opponent piece on square -> can capture but no more moves on this diagonal
+            {
+                captureMove(from, targetSquare, moves);
+                break;
+            }
+            // own piece blocks moves
+            else
+                break;
+            currentSquare = targetSquare;
+        }
+    }
+}
+
+static void generateRookMoves(const Board &board, MoveList &moves, int square)
+{
+    const BitB allOccup = allOccupancyBB(board); // bb of all occupied squares
+    const bool white = board.whiteToMove;        // piece on start square is a [white] piece?
+    const BitB captureOccup = capturableOpponentOccupancy(board, white);
+
+    // loop through each straight direction from start square
+    for (int i = 0; i < 4; i++)
+    {
+        int currentSquare = square; // current square being tested
+        const int dFile = STRAIGHT_MOVES[i][0];
+        const int dRank = STRAIGHT_MOVES[i][1];
 
         while (true)
         {
-            const int tar_sq = get_move_to_ind(curr_sq, d_file, d_rank);
+            const int targetSquare = getNextMoveIndex(currentSquare, dFile, dRank);
 
             // stop if off board
-            if (tar_sq == -1)
+            if (targetSquare == -1)
                 break;
 
-            if (!is_bit_set(all_occup,tar_sq)) // no piece on square -> can make quiet move
+            if (!isBitSet(allOccup, targetSquare)) // no piece on square -> can make quiet move
             {
-                moves.push_back(create_move(square, tar_sq, rook, Empty));
+                quietMove(square, targetSquare, moves);
             }
 
-            else if (is_bit_set( white ? b_occup : w_occup, tar_sq )) // opponent piece on square -> can capture
+            else if (isBitSet(captureOccup, targetSquare)) // opponent piece on square -> can capture
             {
-                moves.push_back(create_move(square, tar_sq, rook, board.squares[tar_sq]));
+                captureMove(square, targetSquare, moves);
                 break;
             }
 
             // own piece blocks moves
             else
                 break;
-
-            curr_sq = tar_sq;
+            currentSquare = targetSquare;
         }
     }
 }
 
-static void generate_queen_moves(const Board &board, vector<Move> &moves, int square)
+static void generateQueenMoves(const Board &board, MoveList &moves, int from)
 {
     // Queen = bishop + rook movement
-    generate_bishop_moves(board, moves, square);
-    generate_rook_moves(board, moves, square);
+    generateBishopMoves(board, moves, from);
+    generateRookMoves(board, moves, from);
 }
 
-static void generate_king_moves(const Board &board, vector<Move> &moves, int square)
+static void generateKingMoves(const Board &board, MoveList &moves, int from)
 {
-    Piece king = board.squares[square];
-    bool white = is_white(king);
+    const bool white = board.whiteToMove;
+    const BitB allOccup = allOccupancyBB(board);
+    const BitB captureOccup = capturableOpponentOccupancy(board, white);
+    const BitB oppAttacks = white ? board.blackAttacksMask : board.whiteAttacksMask;
 
-    for (int i = 0; i < 8; i++)
+    BitB king_moves = KING_ATTACKS[from];
+
+    while (king_moves)
     {
-        const int to_sq = get_move_to_ind(square, KING_MOVES[i][0], KING_MOVES[i][1]);
-
-        if (to_sq == -1)
-            continue;
-
-        // NORMAL MOVE
-        if (!is_bit_set(all_occupancy(board),to_sq))
-        {
-            moves.push_back(create_move(square, to_sq, king, Empty));
-        }
-
-        // CAPTURE
-        else if (is_bit_set(white ? black_occupancy(board) : white_occupancy(board), to_sq))
-        {
-            moves.push_back(create_move(square, to_sq, king, board.squares[to_sq]));
-        }
+        const int to = popLSB(king_moves);
+        if (isBitSet(captureOccup, to) && !isBitSet(oppAttacks, to)) // can capture opponent piece if square not attacked by opponent
+            captureMove(from, to, moves);
+        else if (!isBitSet(allOccup, to) && !isBitSet(oppAttacks, to)) // can move to empty square if not attacked by opponent
+            quietMove(from, to, moves);
     }
 
-    // CASTLING
-    if (king_can_castle_kingside(board, white))
-        moves.push_back(
-            create_move(square, white ? 6 : 62, king, Empty, KING_CASTLE));
-
-    if (king_can_castle_queenside(board, white))
-        moves.push_back(
-            create_move(square, white ? 2 : 58, king, Empty, QUEEN_CASTLE));
+    generateKingCastles(board, moves, from);
 }
 
-bool is_in_check(const Board &board, bool white_king)
-{
-    int king_sq = king_square(board, white_king);
-    if (king_sq == -1)
-        return false;
+//--------------------- Check / Attack Helpers
 
-    if (white_king)
-        return is_square_attacked(board, king_sq, false);
-    else
-        return is_square_attacked(board, king_sq, true);
+inline bool isSquareAttackedByPawn(const Board &board, int square, bool by_white)
+{
+    return (
+               (by_white ? BLACK_PAWN_ATTACKS[square] : WHITE_PAWN_ATTACKS[square]) & board.pieceBBs[pieceToBitboardIndex(by_white ? WP : BP)]) != EMPTY_BB;
 }
 
-bool is_square_attacked(const Board &board, int square, bool by_white)
+inline bool isSquareAttackedByKnight(const Board &board, int square, bool by_white)
 {
-    if (is_square_attacked_by_pawn(board,square,by_white))
-        return true;
-    if (is_square_attacked_by_knight(board,square,by_white))
-        return true;
-    if (is_square_attacked_by_diagonal(board,square,by_white))
-        return true;
-    if (is_square_attacked_by_straight(board,square,by_white))
-        return true;
-    if (is_square_attacked_by_king(board,square,by_white))
-        return true;
-    return false;
+    return (
+        (KNIGHT_ATTACKS[square] & board.pieceBBs[pieceToBitboardIndex(by_white ? WN : BN)]) != EMPTY_BB);
 }
 
-std::vector<Move> generate_legal_moves_for_square(const Board &board, int square)
+inline bool isSquareAttackedByDiagonal(const Board &board, int square, bool by_white)
 {
-    std::vector<Move> moves;
-
-    for (const Move &move : generate_legal_moves(board))
-    {
-        if (move.from == square)
-        {
-            moves.push_back(move);
-        }
-    }
-
-    return moves;
-}
-
-bool same_move(const Move &a, const Move &b)
-{
-    return a.from == b.from &&
-           a.to == b.to &&
-           a.piece == b.piece &&
-           a.captured == b.captured &&
-           a.flag == b.flag &&
-           a.promotion == b.promotion;
-}
-
-// returns true if [white] king can castle kingside
-bool king_can_castle_kingside(const Board &board, bool white)
-{
-    if ( // FEN has no kingside castling rights -> false
-         // updated when rook is moved so no need to check for rook on starting square
-        white
-            ? !board.white_king_side
-            : !board.black_king_side)
-        return false;
-
-    if ( // king is not on start square -> false
-        king_square(board,white) != (white ? 4 : 60))
-        return false;
-
-    if (!squares_between_king_and_rook_clear(board,white,true))
-        return false;
-
-    int squares_between_king_and_rook[2] = {
-        white ? 5 : 61,
-        white ? 6 : 62};
-
-    for (int sq : squares_to_check_between_king_and_rook(white,true))
-    {
-        // king castling through check -> false
-        if (is_square_attacked(board, sq, !white))
-            return false;
-    }
-
-    // currently in check -> false
-    if (is_in_check(board, white))
-        return false;
-
-    return true;
-}
-
-// returns true if [white] king can castle queenside
-bool king_can_castle_queenside(const Board &board, bool white)
-{
-    if ( // FEN has no queenside castling rights -> false
-         // updated when rook is moved so no need to check for rook on starting square
-        white
-            ? !board.white_queen_side
-            : !board.black_queen_side)
-        return false;
-
-    if ( // king is not on start square -> false
-        king_square(board,white) != (white ? 4 : 60))
-        return false;
-
-    // squares between king and rook are not clear -> false
-    if (!squares_between_king_and_rook_clear(board,white,false))
-        return false;
-
-    int squares_king_castles_through[2] =
-        {
-            white ? 2 : 58,
-            white ? 3 : 59};
-
-    for (int sq : squares_king_castles_through)
-    {
-        if (is_square_attacked(board, sq, !white))
-            return false;
-    }
-
-    // currently in check -> false
-    if (is_in_check(board, white))
-        return false;
-
-    return true;
-}
-
-static inline vector<int> squares_to_check_between_king_and_rook(bool white, bool kingside)
-{
-    vector<int> squares_to_check;
-    if (kingside)
-    {
-        if (white)
-            squares_to_check = {5, 6};
-        else
-            squares_to_check = {61, 62};
-    }
-    else
-    {
-        if (white)
-            squares_to_check = {1, 2, 3};
-        else
-            squares_to_check = {57, 58, 59};
-    }
-    return squares_to_check;
-}
-
-static bool squares_between_king_and_rook_clear(const Board& board, bool white, bool kingside)
-{
-    vector<int> squares_to_check = squares_to_check_between_king_and_rook(white,kingside);
-    for (int sq : squares_to_check)
-    {
-        if (is_bit_set(all_occupancy(board),sq))
-            return false;
-    }
-    return true;
-}
-
-
-static bool is_square_attacked_by_pawn(const Board &board, int square, bool by_white)
-{
-    if (board.bitboards[piece_to_bb_ind(by_white ? WP : BP)] == EMPTY_BB) // no opponent pawns on board -> false
-        return false;
-
-    int att_d_rank = by_white ? - 1 : 1;    // rank of potential attacking pawns
-    int att_d_files[2] = {- 1,  1};         // files of potential attacking pawns
-
-    // bitboard index of piece that we are checking is attacking the square
-    int att_p_bb = by_white ? piece_to_bb_ind(WP) : piece_to_bb_ind(BP);
-
-    for (int att_d_file : att_d_files)
-    {
-        const int att_sq = get_move_to_ind(square, att_d_file, att_d_rank); // square of potential attacking pawn
-
-        if (att_sq == -1)
-            continue;
-
-        if (is_bit_set(board.bitboards[att_p_bb], att_sq)) // if opponent pawn on that square -> true
-            return true;
-    }
-    return false;
-}
-
-static bool is_square_attacked_by_knight(const Board &board, int square, bool by_white)
-{
-    if (board.bitboards[piece_to_bb_ind(by_white ? WN : BN)] == EMPTY_BB) // no opponent knights on board -> false
-        return false;
-
-    // bitboard index of piece that we are checking is attacking the square
-    int att_p_bb = by_white ? piece_to_bb_ind(WN) : piece_to_bb_ind(BN);
-
-    for (int i = 0; i < 8; i++)
-    {
-        const int to_sq = get_move_to_ind(square, KNIGHT_MOVES[i][0], KNIGHT_MOVES[i][1]);
-
-        if (to_sq == -1)
-            continue;
-
-        if (is_bit_set(board.bitboards[att_p_bb],to_sq))
-            return true;
-    }
-    return false;
-}
-
-static bool is_square_attacked_by_diagonal(const Board &board, int square, bool by_white)
-{
-    if (diagonal_attackers(board,by_white) == EMPTY_BB)
+    if (diagonalAttackersBB(board, by_white) == EMPTY_BB)
         return false;
 
     for (int i = 0; i < 4; i++)
     {
-        int curr_sq = square;
+        int currentSquare = square;
 
         while (true)
         {
-            const int tar_sq = get_move_to_ind(curr_sq, DIAGONAL_MOVES[i][0], DIAGONAL_MOVES[i][1]);
+            const int targetSquare = getNextMoveIndex(currentSquare, DIAGONAL_MOVES[i][0], DIAGONAL_MOVES[i][1]);
 
             // stop if off board
-            if (tar_sq == -1)
+            if (targetSquare == -1)
                 break;
 
-            if (!is_bit_set(all_occupancy(board),tar_sq)) // nothing on square -> next
+            if (!isBitSet(allOccupancyBB(board), targetSquare)) // nothing on square -> next
             {
-                curr_sq = tar_sq;
+                currentSquare = targetSquare;
                 continue;
             }
-            
-            if (is_bit_set(diagonal_attackers(board, by_white),tar_sq))
+
+            if (isBitSet(diagonalAttackersBB(board, by_white), targetSquare))
                 return true;
             break;
         }
     }
     return false;
 }
-static bool is_square_attacked_by_straight(const Board &board, int square, bool by_white)
+
+inline bool isSquareAttackedByStraight(const Board &board, int square, bool by_white)
 {
-    if (straight_attackers(board,by_white) == EMPTY_BB)
+    if (straightAttackersBB(board, by_white) == EMPTY_BB)
         return false;
 
     const int directions[4][2] = {{0, -1}, {0, 1}, {1, 0}, {-1, 0}};
 
     for (int i = 0; i < 4; i++)
     {
-        int curr_sq = square;
+        int currentSquare = square;
 
         while (true)
         {
-            const int tar_sq = get_move_to_ind(curr_sq, directions[i][0], directions[i][1]);
+            const int targetSquare = getNextMoveIndex(currentSquare, directions[i][0], directions[i][1]);
 
             // stop if off board
-            if (tar_sq == -1)
+            if (targetSquare == -1)
                 break;
 
-            if (!is_bit_set(all_occupancy(board),tar_sq)) // nothing on square -> next
+            if (!isBitSet(allOccupancyBB(board), targetSquare)) // nothing on square -> next
             {
-                curr_sq = tar_sq;
+                currentSquare = targetSquare;
                 continue;
             }
-            
-            if (is_bit_set(straight_attackers(board, by_white),tar_sq))
+
+            if (isBitSet(straightAttackersBB(board, by_white), targetSquare))
                 return true;
             break;
         }
@@ -656,29 +435,220 @@ static bool is_square_attacked_by_straight(const Board &board, int square, bool 
     return false;
 }
 
-static bool is_square_attacked_by_king(const Board &board, int square, bool by_white)
+inline bool isSquareAttackedByKing(const Board &board, int square, bool by_white)
 {
-    int att_p_bb = by_white ? piece_to_bb_ind(WK) : piece_to_bb_ind(BK);
+    return (
+               KING_ATTACKS[square] & board.pieceBBs[pieceToBitboardIndex(by_white ? WK : BK)]) != EMPTY_BB;
+}
 
-    for (int i = 0; i < 8; i++)
+bool isInCheck(const Board &board, bool white_king)
+{
+    int kingSquare = getKingSquareIndex(board, white_king);
+
+    if (white_king)
+        return isSquareAttacked(board, kingSquare, false);
+    else
+        return isSquareAttacked(board, kingSquare, true);
+}
+
+bool isSquareAttacked(const Board &board, int square, bool by_white)
+{
+    if (!isValidIndex(square))
     {
-        const int to_sq = get_move_to_ind(square, KING_MOVES[i][0], KING_MOVES[i][1]);
-
-        if (to_sq == -1)
-            continue;
-
-        if (is_bit_set(board.bitboards[att_p_bb],to_sq))
-            return true;
+        cout << "INVALID SQUARE in isSquareAttacked : " << square << "\n";
+        return false;
     }
+    if (isSquareAttackedByPawn(board, square, by_white))
+        return true;
+    if (isSquareAttackedByKnight(board, square, by_white))
+        return true;
+    if (isSquareAttackedByDiagonal(board, square, by_white))
+        return true;
+    if (isSquareAttackedByStraight(board, square, by_white))
+        return true;
+    if (isSquareAttackedByKing(board, square, by_white))
+        return true;
     return false;
 }
 
-inline bool is_checkmate(Board &board)
+bool sameMove(const Move &a, const Move &b)
 {
-    if (is_in_check(board,true) || is_in_check(board,false))
+    return moveFrom(a) == moveFrom(b) &&
+           moveTo(a) == moveTo(b) &&
+           moveFlag(a) == moveFlag(b);
+}
+
+inline bool isCheckmate(Board &board)
+{
+    if (!isInCheck(board, board.whiteToMove))
+        return false;
+
+    return generateLegalMoves(board).empty();
+}
+
+// generates legal castling moves - updates MoveList moves
+static void generateKingCastles(const Board &board, MoveList &moves, int from)
+{
+    const bool white = board.whiteToMove;
+    const BitB allOccup = allOccupancyBB(board);
+    const BitB rook_bb = board.pieceBBs[pieceToBitboardIndex(white ? WR : BR)];
+    const BitB oppAttacks = white ? board.blackAttacksMask : board.whiteAttacksMask;
+
+    // get kings square and squares of rooks on both sides
+    const bool rook_can_castle_kingside = isBitSet(rook_bb, (white ? 7 : 63));
+    const bool rook_can_castle_queenside = isBitSet(rook_bb, (white ? 0 : 56));
+
+    if (from != (white ? 4 : 60))
+        return;
+
+    if (rook_can_castle_kingside && (white ? board.whiteCanKsCastle : board.blackCanKsCastle))
     {
-        if (generate_legal_moves(board).empty())
-            return true;
+        // kingside castle squares that must be empty between king and rook
+        const BitB kingside_squares_mask =
+            white
+                ? WHITE_KINGSIDE_CASTLE_EMPTY_SQUARES
+                : BLACK_KINGSIDE_CASTLE_EMPTY_SQUARES;
+
+        if ((kingside_squares_mask & allOccup) == 0) // squares between king and rook are empty :)
+        {
+            // kingside castle attacked squares
+            const BitB kingside_attacked_squares_mask =
+                white
+                    ? WHITE_KINGSIDE_CASTLE_ATTACKED_SQUARES
+                    : BLACK_KINGSIDE_CASTLE_ATTACKED_SQUARES;
+
+            if ((kingside_attacked_squares_mask & oppAttacks) == 0) // squares king passes through are not attacked
+                moves.add(createMove(from, (white ? 6 : 62), KING_CASTLE));
+        }
     }
-    return false;
+
+    if (rook_can_castle_queenside && (white ? board.whiteCanQsCastle : board.blackCanQsCastle))
+    {
+        // queenside castle squares that must be empty between king and rook
+        const BitB queenside_squares_mask =
+            white
+                ? WHITE_QUEENSIDE_CASTLE_EMPTY_SQUARES
+                : BLACK_QUEENSIDE_CASTLE_EMPTY_SQUARES;
+
+        if ((queenside_squares_mask & allOccup) == 0) // squares between king and rook are empty :)
+        {
+            // queenside castle attacked squares
+            const BitB queenside_attacked_squares_mask =
+                white
+                    ? WHITE_QUEENSIDE_CASTLE_ATTACKED_SQUARES
+                    : BLACK_QUEENSIDE_CASTLE_ATTACKED_SQUARES;
+
+            if ((queenside_attacked_squares_mask & oppAttacks) == 0) // squares king passes through are not attacked
+                moves.add(createMove(from, (white ? 2 : 58), QUEEN_CASTLE));
+        }
+    }
+}
+
+//--------------------- Other Helpers
+
+// generates bitboard of all squares [white] attacks - stores in board.[white/black]_attacks
+// used for move generation and check detection
+// this includes white attacking white pieces
+// eg. if a white queen is blocked by a white knight, a bit will still be set at the position of the white knight
+// hence, this mask can also be used to detect defended pieces
+inline BitB generateAttackMasksForSide(const Board &board, bool white)
+{
+    BitB attacks = 0;
+    const BitB allOccup = allOccupancyBB(board);
+
+    // Pawns
+    BitB pawns = board.pieceBBs[pieceToBitboardIndex(white ? WP : BP)];
+    while (pawns)
+    {
+        int from = popLSB(pawns);
+        attacks |= white ? WHITE_PAWN_ATTACKS[from] : BLACK_PAWN_ATTACKS[from];
+    }
+
+    // Knights
+    BitB knights = board.pieceBBs[pieceToBitboardIndex(white ? WN : BN)];
+    while (knights)
+    {
+        int from = popLSB(knights);
+        attacks |= KNIGHT_ATTACKS[from];
+    }
+
+    // Bishops
+    BitB diagonals = diagonalAttackersBB(board, white);
+    while (diagonals)
+    {
+        int from = popLSB(diagonals);
+        for (auto &dir : DIAGONAL_MOVES)
+        {
+            int square = getNextMoveIndex(from, dir[0], dir[1]);
+
+            while (square != -1)
+            {
+                attacks |= square_mask(square);
+                if (isBitSet(allOccup, square))
+                    break;
+                square = getNextMoveIndex(square, dir[0], dir[1]);
+            }
+        }
+    }
+
+    // Straight pieces (rooks + queens)
+    BitB straights = straightAttackersBB(board, white);
+    while (straights)
+    {
+        int from = popLSB(straights);
+        for (auto &dir : STRAIGHT_MOVES)
+        {
+            int square = getNextMoveIndex(from, dir[0], dir[1]);
+
+            while (square != -1)
+            {
+                attacks |= square_mask(square);
+                if (isBitSet(allOccup, square))
+                    break;
+                square = getNextMoveIndex(square, dir[0], dir[1]);
+            }
+        }
+    }
+
+    BitB king = board.pieceBBs[pieceToBitboardIndex(white ? WK : BK)];
+    int from = LsbIndex(king);
+    if (from == -1)
+        cout << "ERROR generateAttackMasksForSide : king not found\n";
+    else
+        attacks |= KING_ATTACKS[from];
+
+    return attacks;
+}
+
+inline bool isPassedPawn(const Board &board, int square, bool white)
+{
+    BitB enemy_pawns = white
+                           ? board.pieceBBs[pieceToBitboardIndex(BP)]
+                           : board.pieceBBs[pieceToBitboardIndex(WP)];
+
+    BitB mask = white
+                    ? WHITE_PASSED_PAWN_MASKS[square]
+                    : BLACK_PASSED_PAWN_MASKS[square];
+
+    return (enemy_pawns & mask) == EMPTY_BB;
+}
+
+// updates board.[white/black]_attacks
+// must be called after every move is made or when fen is loaded
+inline void updateAttackMasks(Board &board)
+{
+    board.whiteAttacksMask = generateAttackMasksForSide(board, true);
+    board.blackAttacksMask = generateAttackMasksForSide(board, false);
+}
+
+// bitboard of opponent pieces that can be captured by the side to move
+// does not include opponent king since it cannot be captured
+static BitB capturableOpponentOccupancy(const Board &board, bool white)
+{
+    BitB opp = white ? blackOccupancyBB(board) : whiteOccupancyBB(board);
+
+    // Kings are not capturable pieces.
+    opp &= ~board.pieceBBs[pieceToBitboardIndex(white ? BK : WK)];
+
+    return opp;
 }

@@ -1,90 +1,152 @@
 #pragma once
-#include <vector>
 #include <cstdint>
-#include "utils.h"
-#include "board.hpp"
+#include "core/utils.hpp"
+#include "core/board.hpp"
 
-                                                                    // Move flags
+using Move = uint16_t;
 
+//--------------------- Constants
+
+constexpr int FLAG_SHIFT = 12;
+constexpr int TO_SHIFT = 6;
+constexpr int FROM_SHIFT = 0;
+
+constexpr uint16_t FLAG_MASK = 0b1111000000000000;
+constexpr uint16_t TO_MASK = 0b0000111111000000;
+constexpr uint16_t FROM_MASK = 0b0000000000111111;
+
+//--------------------- Move flags
 enum MoveFlag : uint8_t
 {
-    QUIET = 0,      // normal move
-    CAPTURE,
+    QUIET = 0, // normal move
+    CAPTURE,   // capture
 
-    DOUBLE_PAWN,    // pawn moves 2 squares
-    EN_PASSANT,
+    KING_CASTLE,  // king side castle
+    QUEEN_CASTLE, // queen side castle
 
-    KING_CASTLE,    // king side castle
-    QUEEN_CASTLE,   // queen side castle
+    DOUBLE_PAWN, // pawn double step
+    EN_PASSANT,  // en passant
 
-    PROMOTION,      // pawn promotion (no capture)
-    PROMO_CAPTURE   // promotion with capture
+    N_PROMO, // pawn promote to knight
+    B_PROMO, // pawn promote to bishop
+    R_PROMO, // pawn promote to rook
+    Q_PROMO, // pawn promote to queen
+
+    CHECK,
 };
 
+//--------------------- Move structure
 
-                                                                    // Move structure
-
-struct Move
+inline Move createMove(int from, int to, int flag)
 {
-    int from;           // index of square moved from
-    int to;             // index of square moved to
-
-    Piece piece;       // piece moving
-    Piece captured;    // captured piece
-
-    MoveFlag flag;     // special move type
-
-    Piece promotion;   // promotion piece (if any, else Empty)
-
-};
-
-
-                                                                    // Helper functions
-
-// create a basic move
-inline Move create_move(int from, int to, Piece piece, Piece captured)
-{
-    return Move{
-        from,
-        to,
-        piece,
-        captured,
-        (captured == Empty ? QUIET : CAPTURE),
-        Empty
-    };
+    // Stores a move as 16-bit representation:
+    // FFFF TTTTTT SSSSSS
+    // Flag Target Start
+    // Unpack with : get_[from, to, flag](move)
+    return (from << FROM_SHIFT) |
+           (to << TO_SHIFT) |
+           (flag << FLAG_SHIFT);
 }
 
-inline Move create_move(
-    int from,
-    int to,
-    Piece piece,
-    Piece captured,
-    MoveFlag flag,
-    Piece promotion = Empty)
+//--------------------- Move parsing
+
+// takes 16 bit move representation
+// returns index of square moved from
+inline const int moveFrom(Move move)
 {
-    return Move{
-        from,
-        to,
-        piece,
-        captured,
-        flag,
-        promotion
-    };
+    return (move >> FROM_SHIFT) & 0x3F; // 6 bits
+}
+// takes 16 bit move representation
+// returns index of square moved to
+inline const int moveTo(Move move)
+{
+    return (move >> TO_SHIFT) & 0x3F;
+}
+// takes 16 bit move representation
+// returns int of MoveFlag
+inline const int moveFlag(Move move)
+{
+    return (move >> FLAG_SHIFT) & 0xF; // 4 bits
 }
 
-void apply_move(Board &board, const Move &move);
-
-// check if move is capture
-inline bool is_capture(const Move& m)
+// Move flag helpers
+inline bool isPromotionFlag(int flag)
 {
-    return m.captured != Empty;
+    return flag >= N_PROMO && flag <= Q_PROMO;
 }
 
-// check if move is promotion
-inline bool is_promotion(const Move& m)
+inline bool is_castle(const Move &move)
 {
-    return m.flag == PROMOTION || m.flag == PROMO_CAPTURE;
+    return moveFlag(move) == KING_CASTLE ||
+           moveFlag(move) == QUEEN_CASTLE;
 }
 
-bool is_castle(const Move& m);
-bool is_en_passant(const Move& m);
+inline bool is_en_passant(const Move &move)
+{
+    return moveFlag(move) == EN_PASSANT;
+}
+
+inline bool isCapture(const Board &board, const Move &move)
+{
+    const int flag = moveFlag(move);
+
+    return flag == CAPTURE ||
+           flag == EN_PASSANT ||
+           board.squares[moveTo(move)] != Empty;
+}
+
+//--------------------- Move helper functions
+
+inline Piece promotionPieceFromFlag(MoveFlag flag, bool white)
+{
+    switch (flag)
+    {
+    case Q_PROMO:
+        return white ? WQ : BQ;
+    case R_PROMO:
+        return white ? WR : BR;
+    case B_PROMO:
+        return white ? WB : BB;
+    case N_PROMO:
+        return white ? WN : BN;
+
+    default:
+        return Empty;
+    }
+}
+
+inline std::string moveFlagToString(MoveFlag flag)
+{
+    switch (flag)
+    {
+    case QUIET:
+        return "-";
+    case CAPTURE:
+        return "Capture";
+    case KING_CASTLE:
+        return "King Castle";
+    case QUEEN_CASTLE:
+        return "Queen Castle";
+    case DOUBLE_PAWN:
+        return "Double Pawn";
+    case EN_PASSANT:
+        return "En Passant";
+    case N_PROMO:
+        return "Promote Knight";
+    case B_PROMO:
+        return "Promote Bishop";
+    case R_PROMO:
+        return "Promote Rook";
+    case Q_PROMO:
+        return "Promote Queen";
+    default:
+        return "UNKNOWN FLAG";
+    }
+}
+
+inline void printMove(const Board &board, const Move &move)
+{
+    std::cout << pieceToChar(board.squares[moveFrom(move)]) << " " << squareToName(moveFrom(move))
+              << " -> " << squareToName(moveTo(move)) << " " << pieceToChar(board.squares[moveTo(move)])
+              << " | " << moveFlagToString((MoveFlag)moveFlag(move)) << '\n';
+}
